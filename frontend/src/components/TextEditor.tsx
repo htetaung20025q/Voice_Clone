@@ -57,7 +57,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
       
       {/* Header and Action */}
       <div className="flex items-center justify-between">
-        <label htmlFor="tts-text-input" className="text-sm font-semibold text-zinc-900">
+        <label htmlFor="tts-text-input" className="block text-xs font-bold uppercase tracking-wider text-zinc-700">
           {t.textLabel}
         </label>
         {text.length > 0 && (
@@ -65,15 +65,15 @@ export const TextEditor: React.FC<TextEditorProps> = ({
             type="button"
             onClick={() => onChange('')}
             disabled={disabled}
-            className="text-xs font-medium text-zinc-500 hover:text-myanmar-red transition-colors cursor-pointer"
+            className="text-xs font-medium text-zinc-400 hover:text-myanmar-red transition-colors cursor-pointer flex items-center gap-1"
           >
-            {t.clearText}
+            <span>{t.clearText}</span>
           </button>
         )}
       </div>
 
-      {/* Main Textarea */}
-      <div className="relative">
+      {/* Main Textarea Container */}
+      <div className="relative rounded-2xl border border-zinc-200 bg-white shadow-2xs transition-all focus-within:border-myanmar-red focus-within:ring-2 focus-within:ring-myanmar-red/15">
         <textarea
           id="tts-text-input"
           value={text}
@@ -82,22 +82,40 @@ export const TextEditor: React.FC<TextEditorProps> = ({
           disabled={disabled}
           placeholder={t.placeholder}
           rows={6}
-          className="w-full rounded-xl bg-white border border-zinc-200 p-4 text-base text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-myanmar-red focus:ring-1 focus:ring-myanmar-red transition-all resize-y min-h-[160px] leading-relaxed disabled:opacity-60 disabled:bg-zinc-50 font-sans"
+          className="w-full bg-transparent p-4 text-base text-zinc-900 placeholder-zinc-400 focus:outline-none resize-y min-h-[170px] leading-[1.8] disabled:opacity-60 disabled:bg-zinc-50 font-burmese"
         />
+
+        {/* Bottom bar inside editor */}
+        <div className="flex items-center justify-between px-4 py-2.5 bg-zinc-50/70 border-t border-zinc-100 rounded-b-2xl text-xs text-zinc-500">
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 text-zinc-500">
+              <Clock className="w-3.5 h-3.5 text-zinc-400" />
+              <span>{t.estimatedDuration}: <strong className="font-mono text-zinc-800">{estDurationFormatted}</strong></span>
+            </div>
+            <span className="hidden sm:inline text-zinc-300">•</span>
+            <span className="hidden sm:inline text-[11px] text-zinc-400 font-mono">
+              Ctrl+Enter ↵ {language === 'my' ? 'ဖြင့် အသံဖန်တီးနိုင်သည်' : 'to generate'}
+            </span>
+          </div>
+
+          <span className={`font-mono text-xs ${isOverLimit ? 'text-myanmar-red font-semibold' : 'text-zinc-500'}`}>
+            {currentLength.toLocaleString()} / {maxLength.toLocaleString()} {t.charCount}
+          </span>
+        </div>
       </div>
 
       {/* Preset sample buttons if empty */}
       {!text && (
-        <div className="pt-1">
-          <span className="text-xs text-zinc-400 font-medium">{t.presetsLabel}:</span>
-          <div className="flex flex-wrap gap-2 mt-1.5">
+        <div className="pt-1 space-y-1.5">
+          <span className="text-[11px] text-zinc-400 font-medium">{t.presetsLabel}:</span>
+          <div className="flex flex-wrap gap-2">
             {presets.map((preset, idx) => (
               <button
                 key={idx}
                 type="button"
                 onClick={() => onChange(preset.text)}
                 disabled={disabled}
-                className="text-xs px-2.5 py-1.5 rounded-lg bg-zinc-50 hover:bg-zinc-100 text-zinc-700 border border-zinc-200 transition-colors cursor-pointer"
+                className="text-xs px-3 py-1.5 rounded-xl bg-white hover:bg-zinc-50 text-zinc-700 border border-zinc-200 hover:border-zinc-300 shadow-2xs transition-all cursor-pointer font-burmese"
               >
                 {preset.label}
               </button>
@@ -105,18 +123,6 @@ export const TextEditor: React.FC<TextEditorProps> = ({
           </div>
         </div>
       )}
-
-      {/* Counter and Estimated Duration */}
-      <div className="flex items-center justify-between text-xs text-zinc-500 pt-1">
-        <div className="flex items-center gap-1.5 text-zinc-500">
-          <Clock className="w-3.5 h-3.5 text-zinc-400" />
-          <span>{t.estimatedDuration}: <strong className="font-mono text-zinc-700">{estDurationFormatted}</strong></span>
-        </div>
-
-        <span className={`font-mono ${isOverLimit ? 'text-myanmar-red font-semibold' : 'text-zinc-500'}`}>
-          {currentLength.toLocaleString()} / {maxLength.toLocaleString()} {t.charCount}
-        </span>
-      </div>
 
     </div>
   );

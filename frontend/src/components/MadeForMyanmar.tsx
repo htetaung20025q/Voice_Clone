@@ -35,41 +35,42 @@ export const MadeForMyanmar: React.FC<MadeForMyanmarProps> = ({ language }) => {
 
   return (
     <section className="max-w-5xl mx-auto px-4 sm:px-6">
-      <div className="rounded-2xl border border-zinc-200 bg-zinc-50/60 p-8 sm:p-12 relative overflow-hidden">
+      <div className="rounded-3xl border border-zinc-200/90 bg-gradient-to-b from-amber-50/25 via-white to-zinc-50/40 p-8 sm:p-12 relative overflow-hidden shadow-xs">
         
         {/* Subtle decorative background pattern */}
-        <div className="absolute inset-0 bg-acheik-lines opacity-50 pointer-events-none" />
+        <div className="absolute inset-0 bg-acheik-wave opacity-25 pointer-events-none" />
 
         {/* Section Header */}
-        <div className="relative text-center max-w-2xl mx-auto mb-10 space-y-2">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-myanmar-gold/30 text-myanmar-gold text-xs font-semibold shadow-xs">
-            <Sparkles className="w-3 h-3 text-myanmar-gold" />
-            <span>{t.badge}</span>
+        <div className="relative text-center max-w-2xl mx-auto mb-10 space-y-2.5">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-amber-300/60 text-amber-800 text-xs font-semibold shadow-2xs">
+            <span className="text-amber-500 font-serif">❖</span>
+            <span className="font-burmese">{t.badge}</span>
+            <Sparkles className="w-3 h-3 text-amber-500" />
           </div>
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900">
+          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-zinc-900 font-burmese leading-tight">
             {t.title}
           </h2>
-          <p className="text-sm text-zinc-600">
+          <p className="text-sm text-zinc-600 font-burmese leading-[1.8]">
             {t.subtitle}
           </p>
         </div>
 
-        {/* 4 Cards Grid */}
+        {/* 4 Cards Grid with subtle lacquer/gold accents */}
         <div className="relative grid grid-cols-1 md:grid-cols-2 gap-5">
           {items.map((item, idx) => {
             const Icon = item.icon;
             return (
               <div
                 key={idx}
-                className="p-5 rounded-xl bg-white border border-zinc-200 space-y-2 hover:border-zinc-300 transition-colors shadow-xs"
+                className="p-6 rounded-2xl bg-white border border-zinc-200/90 hover:border-amber-400/50 hover:shadow-xs transition-all space-y-2.5 group"
               >
-                <div className="w-8 h-8 rounded-lg bg-myanmar-red-light flex items-center justify-center text-myanmar-red mb-3">
+                <div className="w-9 h-9 rounded-xl bg-myanmar-red-light/80 border border-myanmar-red/10 flex items-center justify-center text-myanmar-red group-hover:scale-105 transition-transform mb-3">
                   <Icon className="w-4 h-4" />
                 </div>
-                <h3 className="text-base font-semibold text-zinc-900">
+                <h3 className="text-base font-bold text-zinc-900 font-burmese">
                   {item.title}
                 </h3>
-                <p className="text-xs sm:text-sm text-zinc-600 leading-relaxed">
+                <p className="text-xs sm:text-sm text-zinc-600 leading-[1.8] font-burmese">
                   {item.description}
                 </p>
               </div>

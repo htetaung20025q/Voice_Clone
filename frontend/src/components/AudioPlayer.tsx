@@ -143,30 +143,54 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
       />
 
       {/* Header: "Your voice is ready" */}
-      <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-100 pb-3.5">
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
             <CheckCircle2 className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-zinc-900">{t.readyTitle}</h3>
-            <p className="text-xs text-zinc-500">
-              {metadata?.voice_name} • {metadata?.style} ({metadata?.language})
-            </p>
+            <h3 className="text-sm font-bold text-zinc-900 font-burmese">{t.readyTitle}</h3>
+            <div className="flex items-center gap-1.5 text-xs text-zinc-500 mt-0.5">
+              <span className="font-semibold text-myanmar-red">{metadata?.voice_name}</span>
+              <span>•</span>
+              <span className="capitalize">{metadata?.style}</span>
+              <span>•</span>
+              <span className="capitalize">{metadata?.language}</span>
+            </div>
           </div>
         </div>
 
-        {metadata?.duration_seconds && (
-          <span className="text-xs font-mono text-zinc-400 bg-zinc-50 px-2 py-1 rounded border border-zinc-100">
-            {metadata.duration_seconds}s
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          {metadata?.duration_seconds ? (
+            <span className="text-xs font-mono text-zinc-600 bg-zinc-100 px-2 py-1 rounded-lg border border-zinc-200">
+              {metadata.duration_seconds}s
+            </span>
+          ) : null}
+          {metadata?.latency_ms ? (
+            <span className="text-[11px] font-mono text-zinc-400 bg-zinc-50 px-2 py-1 rounded-lg border border-zinc-100 hidden sm:inline">
+              ⚡ {(metadata.latency_ms / 1000).toFixed(1)}s
+            </span>
+          ) : null}
+        </div>
       </div>
 
-      {/* Waveform Visualization Simulator */}
-      <div className="h-12 bg-zinc-50 rounded-xl border border-zinc-100 p-2.5 flex items-center justify-between gap-1 overflow-hidden">
-        {Array.from({ length: 40 }).map((_, i) => {
-          const isPassed = (i / 40) * 100 <= progressPercent;
+      {/* Waveform Visualization Simulator with Click-to-Seek */}
+      <div 
+        onClick={(e) => {
+          const rect = e.currentTarget.getBoundingClientRect();
+          const clickX = e.clientX - rect.left;
+          const ratio = Math.max(0, Math.min(1, clickX / rect.width));
+          if (effectiveDuration > 0) {
+            const targetTime = ratio * effectiveDuration;
+            setCurrentTime(targetTime);
+            if (audioRef.current) audioRef.current.currentTime = targetTime;
+          }
+        }}
+        title="Click to seek / နေရာရွှေ့ရန် နှိပ်ပါ"
+        className="h-14 bg-zinc-50/80 hover:bg-zinc-100/60 rounded-xl border border-zinc-200/80 p-3 flex items-center justify-between gap-1 overflow-hidden cursor-pointer transition-colors"
+      >
+        {Array.from({ length: 48 }).map((_, i) => {
+          const isPassed = (i / 48) * 100 <= progressPercent;
           return (
             <div
               key={i}
@@ -180,7 +204,9 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
                   : 'bg-zinc-200'
               }`}
               style={{
-                height: isPlaying ? `${Math.max(20, Math.sin((i + currentTime * 6) * 0.6) * 45 + 50)}%` : `${Math.max(15, (i % 5) * 18 + 20)}%`,
+                height: isPlaying 
+                  ? `${Math.max(20, Math.sin((i + currentTime * 8) * 0.5) * 45 + 50)}%` 
+                  : `${Math.max(18, Math.sin(i * 0.35) * 35 + 40)}%`,
               }}
             />
           );
@@ -192,10 +218,10 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
         <button
           type="button"
           onClick={togglePlay}
-          className="w-11 h-11 rounded-full bg-myanmar-red hover:bg-myanmar-red-hover text-white flex items-center justify-center transition-transform active:scale-95 cursor-pointer flex-shrink-0 shadow-sm shadow-myanmar-red/20"
+          className="w-12 h-12 rounded-full bg-myanmar-red hover:bg-myanmar-red-hover text-white flex items-center justify-center transition-transform active:scale-95 cursor-pointer flex-shrink-0 shadow-md shadow-myanmar-red/25 focus-ring"
           aria-label={isPlaying ? 'Pause' : 'Play'}
         >
-          {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5 fill-current" />}
+          {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5 fill-current" />}
         </button>
 
         {/* Progress Timeline */}
@@ -285,10 +311,10 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
           <button
             type="button"
             onClick={handleDownload}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold text-white bg-myanmar-red hover:bg-myanmar-red-hover transition-colors cursor-pointer shadow-xs shadow-myanmar-red/20"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-zinc-900 hover:bg-zinc-800 transition-all cursor-pointer shadow-sm hover:shadow active:scale-[0.98] focus-ring"
           >
-            <Download className="w-3.5 h-3.5" />
-            <span>{t.downloadBtn}</span>
+            <Download className="w-3.5 h-3.5 text-amber-300" />
+            <span className="font-burmese">{t.downloadBtn}</span>
           </button>
         </div>
       </div>

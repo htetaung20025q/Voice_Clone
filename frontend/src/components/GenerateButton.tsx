@@ -27,28 +27,28 @@ export const GenerateButton: React.FC<GenerateButtonProps> = ({
       type="button"
       onClick={onClick}
       disabled={disabled || isLoading}
-      className={`w-full flex items-center justify-center gap-2.5 py-3.5 px-6 rounded-xl font-semibold text-sm transition-all cursor-pointer select-none disabled:opacity-50 disabled:cursor-not-allowed shadow-sm ${
+      className={`w-full flex items-center justify-center gap-3 py-4 px-8 rounded-2xl font-bold text-base transition-all cursor-pointer select-none disabled:opacity-50 disabled:cursor-not-allowed focus-ring ${
         isLoading
-          ? 'bg-myanmar-red-hover text-white'
+          ? 'bg-myanmar-red text-white shadow-sm shadow-myanmar-red/20 cursor-wait'
           : isSuccess
-          ? 'bg-emerald-600 text-white'
-          : 'bg-myanmar-red hover:bg-myanmar-red-hover text-white shadow-myanmar-red/20 active:scale-[0.99]'
+          ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm shadow-emerald-600/20 scale-[0.99]'
+          : 'bg-myanmar-red hover:bg-myanmar-red-hover text-white shadow-md shadow-myanmar-red/25 hover:shadow-lg hover:shadow-myanmar-red/35 active:scale-[0.99]'
       }`}
     >
       {isLoading ? (
         <>
-          <Loader2 className="w-4 h-4 animate-spin text-white" />
-          <span>{t.generatingBtn}</span>
+          <Loader2 className="w-5 h-5 animate-spin text-white shrink-0" />
+          <span className="font-burmese">{t.generatingBtn}</span>
         </>
       ) : isSuccess ? (
         <>
-          <Check className="w-4 h-4 text-white" />
-          <span>{t.generatedSuccess}</span>
+          <Check className="w-5 h-5 text-white shrink-0" />
+          <span className="font-burmese">{t.generatedSuccess}</span>
         </>
       ) : (
         <>
-          <Sparkles className="w-4 h-4 text-myanmar-gold-light" />
-          <span>{t.generateBtn}</span>
+          <Sparkles className="w-5 h-5 text-amber-300 shrink-0" />
+          <span className="font-burmese">{t.generateBtn}</span>
         </>
       )}
     </button>

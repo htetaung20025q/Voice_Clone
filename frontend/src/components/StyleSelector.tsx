@@ -1,4 +1,5 @@
 import React from 'react';
+import { Check } from 'lucide-react';
 import type { StyleInfo } from '../services/api';
 import type { Language } from '../services/i18n';
 import { translations } from '../services/i18n';
@@ -21,29 +22,67 @@ export const StyleSelector: React.FC<StyleSelectorProps> = ({
   const t = translations[language].studio;
 
   return (
-    <div className="w-full space-y-2">
-      <label htmlFor="style-select" className="block text-sm font-semibold text-zinc-900">
-        {t.styleLabel}
-      </label>
-      <div className="relative">
-        <select
-          id="style-select"
-          value={selectedStyle}
-          onChange={(e) => onSelectStyle(e.target.value)}
-          disabled={disabled}
-          className="w-full appearance-none rounded-xl bg-white border border-zinc-200 px-4 py-3 text-sm text-zinc-900 focus:outline-none focus:border-myanmar-red focus:ring-1 focus:ring-myanmar-red transition-all cursor-pointer disabled:opacity-60 disabled:bg-zinc-50"
-        >
-          {styles.map((s) => (
-            <option key={s.id} value={s.id}>
-              {language === 'my' ? s.myanmar_name : s.name} ({s.description})
-            </option>
-          ))}
-        </select>
-        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-zinc-400">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-          </svg>
-        </div>
+    <div className="w-full space-y-2.5">
+      <div className="flex items-center justify-between">
+        <label className="block text-xs font-bold uppercase tracking-wider text-zinc-700">
+          {t.styleLabel}
+        </label>
+        <span className="text-[11px] font-medium text-zinc-400">
+          {styles.length} {language === 'my' ? 'မျိုး ရွေးချယ်နိုင်သည်' : 'styles'}
+        </span>
+      </div>
+
+      <div 
+        role="radiogroup" 
+        aria-label={t.styleLabel}
+        className="grid grid-cols-2 sm:grid-cols-3 gap-2"
+      >
+        {styles.map((s) => {
+          const isSelected = s.id.toLowerCase() === selectedStyle.toLowerCase();
+
+          return (
+            <div
+              key={s.id}
+              role="radio"
+              aria-checked={isSelected}
+              tabIndex={disabled ? -1 : 0}
+              onClick={() => !disabled && onSelectStyle(s.id)}
+              onKeyDown={(e) => {
+                if (!disabled && (e.key === ' ' || e.key === 'Enter')) {
+                  e.preventDefault();
+                  onSelectStyle(s.id);
+                }
+              }}
+              className={`p-3 rounded-2xl border text-left transition-all cursor-pointer select-none focus-ring ${
+                disabled ? 'opacity-60 cursor-not-allowed' : ''
+              } ${
+                isSelected
+                  ? 'border-myanmar-red bg-gradient-to-br from-myanmar-red-light/90 to-amber-50/40 shadow-2xs ring-1 ring-amber-400/50'
+                  : 'border-zinc-200/90 bg-white hover:border-amber-300/60 hover:bg-zinc-50/70'
+              }`}
+            >
+              <div className="flex items-center justify-between gap-1">
+                <span className="font-burmese font-bold text-xs text-zinc-900 leading-tight">
+                  {language === 'my' ? s.myanmar_name : s.name}
+                </span>
+
+                {isSelected && (
+                  <div className="w-3.5 h-3.5 rounded-full bg-myanmar-red text-white flex items-center justify-center shrink-0">
+                    <Check className="w-2 h-2 stroke-[3]" />
+                  </div>
+                )}
+              </div>
+
+              <span className="text-[10px] text-zinc-400 font-mono block mt-0.5">
+                {s.name}
+              </span>
+
+              <p className="text-[10px] text-zinc-500 truncate mt-1 pt-1 border-t border-zinc-100/80" title={s.description}>
+                {s.description}
+              </p>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
