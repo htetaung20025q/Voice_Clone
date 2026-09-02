@@ -6,6 +6,9 @@ from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, Field, field_validator
 
 
+from app.config import SUPPORTED_VOICES, SUPPORTED_STYLES
+
+
 class TTSRequest(BaseModel):
     """Schema for Text-to-Speech synthesis request."""
     
@@ -60,6 +63,21 @@ class TTSRequest(BaseModel):
         trimmed = v.strip().lower()
         if not trimmed:
             return "thiri"
+        valid_ids = {voice["id"].lower() for voice in SUPPORTED_VOICES}
+        valid_gemini = {voice["gemini_voice"].lower() for voice in SUPPORTED_VOICES}
+        if trimmed not in valid_ids and trimmed not in valid_gemini:
+            raise ValueError(f"Invalid voice '{v}'. Supported voices: {', '.join(sorted(valid_ids))}")
+        return trimmed
+
+    @field_validator("style")
+    @classmethod
+    def validate_style(cls, v: Optional[str]) -> str:
+        if not v:
+            return "natural"
+        trimmed = v.strip().lower()
+        valid_styles = {style["id"].lower() for style in SUPPORTED_STYLES}
+        if trimmed not in valid_styles:
+            raise ValueError(f"Invalid style '{v}'. Supported styles: {', '.join(sorted(valid_styles))}")
         return trimmed
 
 

@@ -3,10 +3,12 @@ Configuration module for Myanmar AI Voice Studio backend.
 Defines supported Myanmar voice personas, Gemini prebuilt voice mappings, and speaking styles.
 """
 
+from pathlib import Path
 from typing import List, Dict, Any
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
 
+_BACKEND_DIR = Path(__file__).resolve().parent.parent
 
 class Settings(BaseSettings):
     """Application settings with environment variable resolution."""
@@ -15,13 +17,14 @@ class Settings(BaseSettings):
     APP_VERSION: str = "1.0.0"
     ENVIRONMENT: str = "development"
     DEBUG: bool = False
+    TEST_MODE: bool = False
     
     HOST: str = "0.0.0.0"
     PORT: int = 8000
     
     # Gemini API Key (Server-side only)
     GEMINI_API_KEY: str = Field(default="", validation_alias="GEMINI_API_KEY")
-    GEMINI_MODEL: str = Field(default="gemini-2.0-flash", validation_alias="GEMINI_MODEL")
+    GEMINI_MODEL: str = Field(default="gemini-2.5-flash-preview-tts", validation_alias="GEMINI_MODEL")
     
     # Text limits
     MAX_TEXT_LENGTH: int = 5000
@@ -31,7 +34,7 @@ class Settings(BaseSettings):
     ALLOWED_ORIGINS: str = "http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173,http://127.0.0.1:3000"
 
     model_config = SettingsConfigDict(
-        env_file=(".env", "../.env"),
+        env_file=(_BACKEND_DIR / ".env", ".env", "../.env"),
         env_file_encoding="utf-8",
         extra="ignore"
     )

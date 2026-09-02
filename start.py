@@ -27,6 +27,15 @@ def main():
     venv_python = os.path.join(project_root, "venv", "bin", "python")
     python_cmd = venv_python if os.path.exists(venv_python) else sys.executable
 
+    import socket
+    def is_port_in_use(port: int, host: str = "127.0.0.1") -> bool:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            return s.connect_ex((host, port)) == 0
+
+    if is_port_in_use(8000):
+        print("⚠️  Warning: Port 8000 is already occupied by another process.")
+        print("   Please terminate the existing server or check running processes before starting.\n")
+
     processes = []
     try:
         # Start FastAPI backend

@@ -45,24 +45,33 @@ app = FastAPI(
 )
 
 # Configure CORS Middleware
-# Allows development from local frontends while supporting production origin restrictions
+# Allows development from local frontends while enforcing origin restrictions
 origins = settings.cors_origins
-if settings.ENVIRONMENT == "development" and "*" not in origins:
-    origins = list(set(origins + [
+if "*" not in origins:
+    origins = list(dict.fromkeys(origins + [
         "http://localhost:5173",
         "http://localhost:3000",
         "http://127.0.0.1:5173",
-        "http://127.0.0.1:3000",
-        "http://localhost:8080"
+        "http://127.0.0.1:3000"
     ]))
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins if settings.ENVIRONMENT != "development" else ["*"],
+    allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "OPTIONS", "HEAD"],
     allow_headers=["*"],
-    expose_headers=["X-Audio-Duration", "X-Audio-Latency-Ms", "X-Audio-Voice", "X-Audio-Style", "X-Audio-Mock"]
+    expose_headers=[
+        "Content-Type",
+        "Content-Disposition",
+        "X-Audio-Duration",
+        "X-Audio-Latency-Ms",
+        "X-Audio-Voice",
+        "X-Audio-Voice-Name",
+        "X-Audio-Style",
+        "X-Audio-Language",
+        "X-Audio-Mock"
+    ]
 )
 
 # Global validation error handler
@@ -98,9 +107,9 @@ async def root():
         "status": "online",
         "docs": "/docs",
         "endpoints": {
-            "tts": "/api/tts",
-            "voices": "/api/voices",
-            "styles": "/api/styles",
-            "health": "/api/health"
+            "tts": "/api/v1/tts",
+            "voices": "/api/v1/voices",
+            "styles": "/api/v1/styles",
+            "health": "/api/v1/health"
         }
     }

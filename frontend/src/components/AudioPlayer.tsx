@@ -25,12 +25,15 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   const [volume, setVolume] = useState(1.0);
   const [isMuted, setIsMuted] = useState(false);
 
+  const [playbackRate, setPlaybackRate] = useState(1.0);
+
   useEffect(() => {
     setIsPlaying(false);
     setCurrentTime(0);
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
+      audioRef.current.playbackRate = playbackRate;
     }
   }, [audioUrl]);
 
@@ -42,6 +45,19 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
     } else {
       audioRef.current.play().then(() => setIsPlaying(true)).catch((e) => console.error('Audio play error:', e));
     }
+  };
+
+  const handleSpeedChange = (rate: number) => {
+    setPlaybackRate(rate);
+    if (audioRef.current) {
+      audioRef.current.playbackRate = rate;
+    }
+  };
+
+  const handleReplay = () => {
+    if (!audioRef.current) return;
+    audioRef.current.currentTime = 0;
+    audioRef.current.play().then(() => setIsPlaying(true)).catch((e) => console.error('Replay error:', e));
   };
 
   const handleTimeUpdate = () => {
@@ -94,7 +110,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
     const a = document.createElement('a');
     a.href = audioUrl;
     const voiceTag = metadata?.voice?.toLowerCase() || 'burmavoice';
-    a.download = `burmavoice_${voiceTag}_${Date.now()}.wav`;
+    a.download = `myanmar-ai-voice-${voiceTag}.wav`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -221,27 +237,60 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
         </div>
       </div>
 
-      {/* Action CTAs: Download & Generate Again */}
-      <div className="pt-2 border-t border-zinc-100 flex flex-wrap items-center justify-between gap-3">
-        {onGenerateAgain && (
+      {/* Playback Speed and Actions Bar */}
+      <div className="pt-3 border-t border-zinc-100 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          {/* Replay */}
           <button
             type="button"
-            onClick={onGenerateAgain}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-600 hover:text-zinc-900 transition-colors cursor-pointer"
+            onClick={handleReplay}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50 border border-zinc-200 transition-colors cursor-pointer"
+            title="Replay from start"
           >
             <RotateCcw className="w-3.5 h-3.5" />
-            <span>{t.generateAgainBtn}</span>
+            <span className="hidden sm:inline">{language === 'my' ? 'ပြန်ဖွင့်ရန်' : 'Replay'}</span>
           </button>
-        )}
 
-        <button
-          type="button"
-          onClick={handleDownload}
-          className="ml-auto inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold text-white bg-zinc-900 hover:bg-zinc-800 transition-colors cursor-pointer shadow-xs"
-        >
-          <Download className="w-3.5 h-3.5" />
-          <span>{t.downloadBtn}</span>
-        </button>
+          {/* Speed Presets */}
+          <div className="flex items-center gap-1 bg-zinc-50 p-1 rounded-lg border border-zinc-200 text-xs">
+            <span className="text-[10px] text-zinc-400 font-semibold px-1.5">Speed:</span>
+            {[0.75, 1.0, 1.25, 1.5].map((rate) => (
+              <button
+                key={rate}
+                type="button"
+                onClick={() => handleSpeedChange(rate)}
+                className={`px-2 py-0.5 rounded text-[11px] font-semibold transition-colors cursor-pointer ${
+                  playbackRate === rate
+                    ? 'bg-white text-zinc-900 shadow-2xs'
+                    : 'text-zinc-500 hover:text-zinc-800'
+                }`}
+              >
+                {rate}x
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 ml-auto">
+          {onGenerateAgain && (
+            <button
+              type="button"
+              onClick={onGenerateAgain}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50 border border-zinc-200 transition-colors cursor-pointer"
+            >
+              <span>{t.generateAgainBtn}</span>
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={handleDownload}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold text-white bg-myanmar-red hover:bg-myanmar-red-hover transition-colors cursor-pointer shadow-xs shadow-myanmar-red/20"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>{t.downloadBtn}</span>
+          </button>
+        </div>
       </div>
 
     </div>

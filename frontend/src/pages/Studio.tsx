@@ -15,9 +15,21 @@ import type {
 import type { Language } from '../services/i18n';
 import { translations } from '../services/i18n';
 
+import { History, Trash2, ArrowUpRight, Sparkles } from 'lucide-react';
+
 interface StudioProps {
   language: Language;
   initialVoiceId?: string | null;
+}
+
+export interface HistoryItem {
+  id: string;
+  text: string;
+  voice: string;
+  voiceName: string;
+  style: string;
+  durationSeconds: number;
+  timestamp: number;
 }
 
 export const Studio: React.FC<StudioProps> = ({ language, initialVoiceId }) => {
@@ -34,14 +46,20 @@ export const Studio: React.FC<StudioProps> = ({ language, initialVoiceId }) => {
   const [selectedVoice, setSelectedVoice] = useState<string>(initialVoiceId || 'thiri');
   const [selectedStyle, setSelectedStyle] = useState<string>('natural');
   const [targetLanguage, setTargetLanguage] = useState<string>('myanmar');
-  const [speed, setSpeed] = useState<number>(1.0);
-  const [pitch, setPitch] = useState<number>(0.0);
 
   const [generationState, setGenerationState] = useState<GenerationState>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const [currentAudioUrl, setCurrentAudioUrl] = useState<string | null>(null);
   const [currentMetadata, setCurrentMetadata] = useState<TTSResponseMetadata | null>(null);
+  const [history, setHistory] = useState<HistoryItem[]>(() => {
+    try {
+      const saved = localStorage.getItem('burmavoice_history');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
 
   // Audio preview helper
   const [previewAudio, setPreviewAudio] = useState<HTMLAudioElement | null>(null);
@@ -89,6 +107,20 @@ export const Studio: React.FC<StudioProps> = ({ language, initialVoiceId }) => {
     }
   };
 
+  const handleClearHistory = () => {
+    setHistory([]);
+    try {
+      localStorage.removeItem('burmavoice_history');
+    } catch {}
+  };
+
+  const handleLoadHistory = (item: HistoryItem) => {
+    setText(item.text);
+    setSelectedVoice(item.voice);
+    setSelectedStyle(item.style);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const handleGenerate = async () => {
     const trimmed = text.trim();
     if (!trimmed) {
@@ -105,13 +137,29 @@ export const Studio: React.FC<StudioProps> = ({ language, initialVoiceId }) => {
         voice: selectedVoice,
         style: selectedStyle,
         language: targetLanguage,
-        speed: speed,
-        pitch: pitch,
       });
 
       setCurrentAudioUrl(result.audioUrl);
       setCurrentMetadata(result.metadata);
       setGenerationState('success');
+
+      // Save to localStorage history
+      const newHistoryItem: HistoryItem = {
+        id: `gen_${Date.now()}`,
+        text: trimmed,
+        voice: selectedVoice,
+        voiceName: result.metadata?.voice_name || selectedVoice,
+        style: selectedStyle,
+        durationSeconds: result.metadata?.duration_seconds || 0,
+        timestamp: Date.now(),
+      };
+      setHistory((prev) => {
+        const updated = [newHistoryItem, ...prev.slice(0, 9)];
+        try {
+          localStorage.setItem('burmavoice_history', JSON.stringify(updated));
+        } catch {}
+        return updated;
+      });
 
       setTimeout(() => {
         setGenerationState('idle');
@@ -119,11 +167,12 @@ export const Studio: React.FC<StudioProps> = ({ language, initialVoiceId }) => {
 
     } catch (err: any) {
       console.error('Synthesis failed:', err);
-      setErrorMessage(t.errorNotice);
+      const msg = err?.message || t.errorNotice;
+      setErrorMessage(msg);
       setGenerationState('error');
       setTimeout(() => {
         setGenerationState('idle');
-      }, 4000);
+      }, 5000);
     }
   };
 
@@ -202,51 +251,22 @@ export const Studio: React.FC<StudioProps> = ({ language, initialVoiceId }) => {
           </div>
         </div>
 
-        {/* Speed & Pitch Controls */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Speed */}
-          <div className="p-3.5 rounded-xl border border-zinc-200 bg-zinc-50 space-y-2">
-            <div className="flex items-center justify-between text-xs">
-              <span className="font-semibold text-zinc-800">{t.speedLabel}</span>
-              <span className="font-mono text-zinc-900 font-bold">{speed}x</span>
+        {/* Option B: Native AI Cadence & Pitch Notice */}
+        <div className="p-4 rounded-xl border border-zinc-200 bg-zinc-50/70 space-y-1.5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-zinc-900">
+              <Sparkles className="w-3.5 h-3.5 text-myanmar-gold" />
+              <span>{language === 'my' ? 'သဘာဝ AI အသံနေအထားနှင့် လေယူလေသိမ်း' : 'Native AI Cadence & Pitch'}</span>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] text-zinc-400">0.5x</span>
-              <input
-                type="range"
-                min="0.5"
-                max="2.0"
-                step="0.1"
-                value={speed}
-                onChange={(e) => setSpeed(parseFloat(e.target.value))}
-                disabled={generationState === 'loading'}
-                className="w-full h-1 bg-zinc-200 rounded-lg appearance-none cursor-pointer"
-              />
-              <span className="text-[10px] text-zinc-400">2.0x</span>
-            </div>
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 font-semibold">
+              {language === 'my' ? 'အလိုအလျောက် ပေါင်းစပ်' : 'Neural Native'}
+            </span>
           </div>
-
-          {/* Pitch */}
-          <div className="p-3.5 rounded-xl border border-zinc-200 bg-zinc-50 space-y-2">
-            <div className="flex items-center justify-between text-xs">
-              <span className="font-semibold text-zinc-800">{t.pitchLabel}</span>
-              <span className="font-mono text-zinc-900 font-bold">{pitch > 0 ? `+${pitch}` : pitch}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] text-zinc-400">-1.0</span>
-              <input
-                type="range"
-                min="-1.0"
-                max="1.0"
-                step="0.1"
-                value={pitch}
-                onChange={(e) => setPitch(parseFloat(e.target.value))}
-                disabled={generationState === 'loading'}
-                className="w-full h-1 bg-zinc-200 rounded-lg appearance-none cursor-pointer"
-              />
-              <span className="text-[10px] text-zinc-400">+1.0</span>
-            </div>
-          </div>
+          <p className="text-xs text-zinc-500 leading-relaxed">
+            {language === 'my'
+              ? 'Gemini Neural Speech စနစ်သည် စကားပြောအသံထွက်နှင့် အဖြတ်အတောက်ကို သဘာဝအတိုင်း အလိုအလျောက် ထိန်းညှိပေးပါသည်။ (အသံဖွင့်သည့် အမြန်နှုန်းကို အောက်ဖော်ပြပါ Audio Player တွင် ချိန်ညှိနိုင်ပါသည်)'
+              : 'Gemini Neural Speech generates authentic Burmese cadence and intonation natively. Playback speed can be adjusted directly in the generated Audio Player below.'}
+          </p>
         </div>
 
         {/* Error Notice */}
@@ -256,7 +276,7 @@ export const Studio: React.FC<StudioProps> = ({ language, initialVoiceId }) => {
             <button
               type="button"
               onClick={handleGenerate}
-              className="text-xs font-semibold underline hover:no-underline ml-3"
+              className="text-xs font-semibold underline hover:no-underline ml-3 cursor-pointer shrink-0"
             >
               {language === 'my' ? 'ထပ်မံကြိုးစားမည်' : 'Try Again'}
             </button>
@@ -284,6 +304,71 @@ export const Studio: React.FC<StudioProps> = ({ language, initialVoiceId }) => {
             }}
             language={language}
           />
+        </div>
+      )}
+
+      {/* Generation History (P2) */}
+      {history.length > 0 && (
+        <div className="pt-8 border-t border-zinc-200 space-y-4 text-left">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <History className="w-4 h-4 text-zinc-500" />
+              <h3 className="text-sm font-bold text-zinc-900">
+                {language === 'my' ? 'မကြာသေးမီက ဖန်တီးမှုများ' : 'Recent Generations'}
+              </h3>
+              <span className="text-xs font-mono text-zinc-400 bg-zinc-100 px-1.5 py-0.5 rounded">
+                {history.length}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={handleClearHistory}
+              className="inline-flex items-center gap-1 text-xs text-zinc-400 hover:text-red-600 transition-colors cursor-pointer"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>{language === 'my' ? 'မှတ်တမ်းဖျက်မည်' : 'Clear'}</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 gap-2.5">
+            {history.map((item) => (
+              <div
+                key={item.id}
+                className="p-3.5 rounded-xl border border-zinc-200 bg-white hover:border-zinc-300 transition-all flex items-center justify-between gap-3 text-xs shadow-2xs"
+              >
+                <div className="min-w-0 flex-1 space-y-1">
+                  <p className="font-medium text-zinc-900 truncate font-burmese">
+                    "{item.text}"
+                  </p>
+                  <div className="flex flex-wrap items-center gap-2 text-[11px] text-zinc-500">
+                    <span className="font-semibold text-myanmar-red">{item.voiceName}</span>
+                    <span>•</span>
+                    <span className="capitalize">{item.style}</span>
+                    {item.durationSeconds > 0 && (
+                      <>
+                        <span>•</span>
+                        <span className="font-mono">{item.durationSeconds}s</span>
+                      </>
+                    )}
+                    <span>•</span>
+                    <span className="text-zinc-400">
+                      {new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => handleLoadHistory(item)}
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-zinc-200 hover:border-zinc-300 text-zinc-700 hover:bg-zinc-50 font-medium transition-colors cursor-pointer shrink-0"
+                  title="Load into editor"
+                >
+                  <span>{language === 'my' ? 'ထည့်သွင်းမည်' : 'Load'}</span>
+                  <ArrowUpRight className="w-3.5 h-3.5 text-zinc-400" />
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

@@ -21,8 +21,17 @@ from config import (
     SAMPLE_RATE,
     MAX_TEXT_LENGTH
 )
-from services.text_processor import MyanmarTextProcessor
-from services.tts_engine import MyanmarTTSEngine
+try:
+    from services.text_processor import MyanmarTextProcessor
+    from services.tts_engine import MyanmarTTSEngine
+except (ImportError, ModuleNotFoundError):
+    import sys
+    from pathlib import Path
+    backend_dir = str(Path(__file__).resolve().parent / "backend")
+    if backend_dir not in sys.path:
+        sys.path.insert(0, backend_dir)
+    from app.main import app as modern_app
+    app = modern_app
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("burmavoice.app")

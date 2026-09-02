@@ -127,7 +127,28 @@ async def synthesize_speech(
             detail=str(val_err)
         )
     except RuntimeError as run_err:
-        logger.error(f"Runtime error during synthesis: {run_err}")
+        err_str = str(run_err)
+        logger.error(f"Runtime error during synthesis: {err_str}")
+        if "QUOTA_EXCEEDED" in err_str:
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="Gemini API rate limit or quota exceeded. Please wait a moment and try again."
+            )
+        elif "NOT_CONFIGURED" in err_str:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Gemini API is not configured on the backend. Please verify GEMINI_API_KEY in backend/.env."
+            )
+        elif "AUTH_ERROR" in err_str:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="Gemini API authentication failed. Please verify the API key."
+            )
+        elif "MODEL_UNAVAILABLE" in err_str:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="The requested Gemini TTS model is currently unavailable."
+            )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="We couldn't generate the voice. Please try again."

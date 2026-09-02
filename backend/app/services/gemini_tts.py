@@ -46,7 +46,7 @@ class GeminiMyanmarTTSService:
                 self._client = None
         else:
             self._client = None
-            logger.warning("GEMINI_API_KEY not set. Operating in graceful mock synthesis mode.")
+            logger.warning("GEMINI_API_KEY is not configured in backend/.env")
 
     def is_configured(self) -> bool:
         """Check if Gemini client is configured with a valid key."""
@@ -55,7 +55,6 @@ class GeminiMyanmarTTSService:
     def _normalize_myanmar_text(self, text: str) -> str:
         """Apply Unicode NFC normalization and clean invisible zero-width spaces."""
         normalized = unicodedata.normalize("NFC", text)
-        # Remove zero-width non-joiners/spaces that might confuse TTS
         cleaned = normalized.replace("\u200B", "").replace("\uFEFF", "")
         return cleaned.strip()
 
@@ -96,7 +95,7 @@ class GeminiMyanmarTTSService:
         language: str = "myanmar",
         duration_sec: float = 2.0
     ) -> Tuple[bytes, Dict[str, Any]]:
-        """Generate a pleasant harmonic audio chime waveform as a mock fallback."""
+        """Generate an audio chime waveform strictly for automated test suites."""
         sample_rate = 24000
         total_frames = int(sample_rate * max(1.5, min(duration_sec, 6.0)))
         buffer = io.BytesIO()
@@ -155,7 +154,8 @@ class GeminiMyanmarTTSService:
         gemini_voice = voice_info["gemini_voice"]
         style_instruction = self._get_style_instruction(style)
 
-        if self._client is None:
+        # In TEST_MODE (for automated tests), use mock synthesis without network calls
+        if settings.TEST_MODE:
             est_duration = max(1.5, min(len(normalized_text) / 12.0, 10.0))
             wav_bytes, meta = self._generate_mock_audio(
                 normalized_text,
@@ -168,16 +168,12 @@ class GeminiMyanmarTTSService:
             meta["latency_ms"] = round(elapsed_ms, 1)
             return wav_bytes, meta
 
+        if self._client is None:
+            raise RuntimeError("NOT_CONFIGURED: Gemini API key is not configured. Please set GEMINI_API_KEY in backend/.env.")
+
         try:
-            # Construct bilingual-aware prompt for Gemini audio modality
-            prompt_content = (
-                f"Instruction: You are an expert Text-to-Speech voice artist specializing in Myanmar (Burmese) and English. "
-                f"Style directive: {style_instruction} "
-                f"Language mode: {language}. "
-                f"Pronounce Burmese Unicode text with natural native intonation, correct tone marks, and authentic cadence. "
-                f"Do not add conversational preamble, greetings, commentary, or quotes. "
-                f"Read the following text exactly as written:\n\n{normalized_text}"
-            )
+            # Concise directive instructing Gemini to generate audio in the desired style
+            prompt_content = f"Read the following text in a {style_instruction}:\n\n{normalized_text}"
 
             config = types.GenerateContentConfig(
                 response_modalities=["AUDIO"],
@@ -205,10 +201,19 @@ class GeminiMyanmarTTSService:
                     for part in candidate.content.parts:
                         if hasattr(part, "inline_data") and part.inline_data:
                             audio_bytes = part.inline_data.data
+                            mime = getattr(part.inline_data, "mime_type", "") or ""
+                            if "rate=" in mime:
+                                try:
+                                    rate_str = mime.split("rate=")[1].split(";")[0].strip()
+                                    sample_rate = int(rate_str)
+                                except Exception:
+                                    sample_rate = 24000
                             break
 
             if not audio_bytes:
-                raise ValueError("No audio content returned in Gemini API response.")
+                finish_reason = getattr(response.candidates[0], "finish_reason", "UNKNOWN") if response.candidates else "NO_CANDIDATE"
+                logger.error(f"No audio content returned. Candidate finish reason: {finish_reason}")
+                raise ValueError(f"No audio content returned from Gemini TTS (finish reason: {finish_reason}).")
 
             wav_bytes = self._pcm_to_wav(audio_bytes, sample_rate=sample_rate)
 
@@ -238,11 +243,23 @@ class GeminiMyanmarTTSService:
             return wav_bytes, metadata
 
         except APIError as api_err:
-            logger.error(f"Gemini API Error: {api_err}")
-            raise RuntimeError(f"Gemini API error: {api_err.message or str(api_err)}")
+            err_msg = str(api_err)
+            logger.error(f"Gemini API Error ({type(api_err).__name__}): {err_msg}")
+            if "RESOURCE_EXHAUSTED" in err_msg or "429" in err_msg or getattr(api_err, "code", None) == 429:
+                raise RuntimeError("QUOTA_EXCEEDED: Gemini API rate limit or quota exceeded. Please wait a moment and try again.")
+            elif "NOT_FOUND" in err_msg or "404" in err_msg or getattr(api_err, "code", None) == 404:
+                raise RuntimeError(f"MODEL_UNAVAILABLE: Gemini model '{settings.GEMINI_MODEL}' was not found. Please check GEMINI_MODEL in backend/.env.")
+            elif "PERMISSION_DENIED" in err_msg or "403" in err_msg or getattr(api_err, "code", None) == 403:
+                raise RuntimeError("AUTH_ERROR: Gemini API key is invalid or lacks necessary permissions.")
+            raise RuntimeError(f"Gemini API error: {getattr(api_err, 'message', str(api_err))}")
         except Exception as e:
-            logger.error(f"Myanmar TTS synthesis error: {e}", exc_info=True)
-            raise RuntimeError(f"Failed to synthesize voice: {str(e)}")
+            err_msg = str(e)
+            logger.error(f"Myanmar TTS synthesis error: {err_msg}", exc_info=True)
+            if "RESOURCE_EXHAUSTED" in err_msg or "429" in err_msg:
+                raise RuntimeError("QUOTA_EXCEEDED: Gemini API rate limit or quota exceeded. Please wait a moment and try again.")
+            elif "NOT_CONFIGURED" in err_msg:
+                raise
+            raise RuntimeError(f"Failed to synthesize voice: {err_msg}")
 
 
 tts_service = GeminiMyanmarTTSService()
