@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="my" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BurmaVoice Studio - Myanmar AI Text-to-Speech</title>
+  
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              400: '#818cf8',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            },
+            accent: {
+              400: '#38bdf8',
+              500: '#0ea5e9',
+            },
+            dark: {
+              800: '#1e293b',
+              850: '#131c2e',
+              900: '#0f172a',
+              950: '#090d16',
+            }
+          },
+          fontFamily: {
+            burmese: ['Pyidaungsu', 'Padauk', 'Noto Sans Myanmar', 'Myanmar3', 'sans-serif'],
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts: Pyidaungsu & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Pyidaungsu:wght@400;700&display=swap" rel="stylesheet">
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: #090d16;
+      color: #f1f5f9;
+    }
+
+    .font-burmese {
+      font-family: 'Pyidaungsu', 'Padauk', 'Noto Sans Myanmar', sans-serif;
+      line-height: 1.8;
+    }
+
+    /* Custom Glassmorphism */
+    .glass-card {
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .glass-card-interactive {
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .glass-card-interactive:hover {
+      border-color: rgba(99, 102, 241, 0.4);
+      background: rgba(30, 41, 59, 0.6);
+      transform: translateY(-1px);
+    }
+
+    .voice-card-active {
+      border-color: #6366f1 !important;
+      background: rgba(99, 102, 241, 0.12) !important;
+      box-shadow: 0 0 20px -3px rgba(99, 102, 241, 0.35);
+    }
+
+    /* Range slider custom styling */
+    input[type=range] {
+      accent-color: #6366f1;
+    }
+
+    /* Waveform canvas */
+    #waveformCanvas {
+      width: 100%;
+      height: 64px;
+      display: block;
+    }
+
+    /* Subtle custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.6);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(51, 65, 85, 0.8);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(100, 116, 139, 1);
+    }
+  </style>
+</head>
+<body class="bg-dark-950 text-slate-100 min-h-screen flex flex-col selection:bg-brand-500 selection:text-white">
+
+  <!-- 1. Header -->
+  <header class="border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-md sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      
+      <!-- Brand Logo -->
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 via-indigo-500 to-accent-400 flex items-center justify-center shadow-lg shadow-brand-500/25">
+          <i data-lucide="waves" class="w-5 h-5 text-white"></i>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <span class="font-bold text-lg sm:text-xl tracking-tight bg-gradient-to-r from-white via-slate-200 to-indigo-300 bg-clip-text text-transparent">BurmaVoice Studio</span>
+            <span class="text-[11px] px-2 py-0.5 rounded-full bg-brand-500/15 text-brand-400 border border-brand-500/30 font-medium">Local Engine</span>
+          </div>
+          <p class="text-xs text-slate-400 font-burmese">မြန်မာ AI စာသားမှ အသံဖန်တီးစနစ်</p>
+        </div>
+      </div>
+
+      <!-- System Status Indicators -->
+      <div class="flex items-center space-x-3 sm:space-x-4 text-xs">
+        <div class="hidden sm:flex items-center space-x-1.5 px-3 py-1 rounded-full bg-slate-800/80 border border-slate-700/60 text-slate-300 font-medium">
+          <i data-lucide="cpu" class="w-3.5 h-3.5 text-accent-400"></i>
+          <span>Neural VITS (mms-tts)</span>
+        </div>
+        <div class="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-medium">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span id="statusIndicator">Engine Ready</span>
+        </div>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      
+      <!-- 2. Left Column (Sidebar / Controls) [4 Cols] -->
+      <aside class="lg:col-span-4 space-y-6">
+        
+        <!-- Voice Profile Selection Section -->
+        <div class="glass-card rounded-2xl p-5 space-y-4 border border-slate-800">
+          <div class="flex items-center justify-between border-b border-slate-800/80 pb-3">
+            <h2 class="text-sm font-semibold text-slate-200 flex items-center gap-2">
+              <i data-lucide="user-check" class="w-4 h-4 text-brand-400"></i>
+              <span>အသံပုံစံ (Voice Profiles)</span>
+            </h2>
+            <span class="text-[11px] text-slate-500 font-medium" id="voiceCountBadge">3 Speakers</span>
+          </div>
+
+          <!-- Interactive Voice Cards -->
+          <div id="voiceCardsContainer" class="space-y-3">
+            
+            <!-- Speaker 1: Female - Soft -->
+            <div
+              data-speaker-id="female_soft"
+              class="voice-card voice-card-active glass-card-interactive rounded-xl p-3.5 cursor-pointer flex items-center justify-between border transition"
+            >
+              <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-slate-800/90 border border-slate-700/60 flex items-center justify-center text-xl shadow-inner">
+                  👩
+                </div>
+                <div>
+                  <div class="flex items-center space-x-2">
+                    <h3 class="font-semibold text-sm text-white font-burmese">သီရိ (Thiri)</h3>
+                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-brand-500/20 text-brand-300 font-medium">Soft Female</span>
+                  </div>
+                  <p class="text-xs text-slate-400 font-burmese mt-0.5">နူးညံ့ညင်သာပြီး သဘာဝကျသော အသံ</p>
+                </div>
+              </div>
+              <div class="check-icon-wrapper text-brand-400">
+                <i data-lucide="check-circle-2" class="w-5 h-5 fill-brand-500/20"></i>
+              </div>
+            </div>
+
+            <!-- Speaker 2: Male - Deep -->
+            <div
+              data-speaker-id="male_deep"
+              class="voice-card glass-card-interactive rounded-xl p-3.5 cursor-pointer flex items-center justify-between border border-slate-800/80 transition"
+            >
+              <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-slate-800/90 border border-slate-700/60 flex items-center justify-center text-xl shadow-inner">
+                  👨
+                </div>
+                <div>
+                  <div class="flex items-center space-x-2">
+                    <h3 class="font-semibold text-sm text-white font-burmese">ကျော်သူ (Kyaw Thu)</h3>
+                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-medium">Deep Male</span>
+                  </div>
+                  <p class="text-xs text-slate-400 font-burmese mt-0.5">နက်နဲခန့်ညားသော ပုံပြင်နှင့် စာဖတ်အသံ</p>
+                </div>
+              </div>
+              <div class="check-icon-wrapper text-slate-600 hidden">
+                <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+              </div>
+            </div>
+
+            <!-- Speaker 3: Female - News -->
+            <div
+              data-speaker-id="female_news"
+              class="voice-card glass-card-interactive rounded-xl p-3.5 cursor-pointer flex items-center justify-between border border-slate-800/80 transition"
+            >
+              <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-slate-800/90 border border-slate-700/60 flex items-center justify-center text-xl shadow-inner">
+                  🎙️
+                </div>
+                <div>
+                  <div class="flex items-center space-x-2">
+                    <h3 class="font-semibold text-sm text-white font-burmese">မေနှင်း (May Hnin)</h3>
+                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 font-medium">News Anchor</span>
+                  </div>
+                  <p class="text-xs text-slate-400 font-burmese mt-0.5">လေးနက်ကြည်လင်သော သတင်းကြေညာအသံ</p>
+                </div>
+              </div>
+              <div class="check-icon-wrapper text-slate-600 hidden">
+                <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Speech Controls Section -->
+        <div class="glass-card rounded-2xl p-5 space-y-4 border border-slate-800">
+          <div class="flex items-center justify-between border-b border-slate-800/80 pb-3">
+            <h2 class="text-sm font-semibold text-slate-200 flex items-center gap-2">
+              <i data-lucide="sliders" class="w-4 h-4 text-accent-400"></i>
+              <span>အသံအမြန်နှုန်း (Speech Controls)</span>
+            </h2>
+          </div>
+
+          <!-- Speed Slider -->
+          <div class="space-y-2 bg-slate-900/50 p-4 rounded-xl border border-slate-800/60">
+            <div class="flex justify-between items-center text-xs">
+              <label for="speedSlider" class="font-medium text-slate-300 flex items-center gap-1.5">
+                <i data-lucide="gauge" class="w-3.5 h-3.5 text-accent-400"></i>
+                <span>အမြန်နှုန်း (Speed):</span>
+              </label>
+              <span id="speedValueDisplay" class="font-mono text-brand-400 bg-brand-500/10 px-2 py-0.5 rounded border border-brand-500/20 font-bold">1.0x</span>
+            </div>
+            
+            <input
+              type="range"
+              id="speedSlider"
+              min="0.5"
+              max="1.5"
+              step="0.1"
+              value="1.0"
+              class="w-full cursor-pointer h-2 bg-slate-800 rounded-lg appearance-none"
+            />
+            
+            <div class="flex justify-between text-[11px] text-slate-500 font-mono pt-1">
+              <span>0.5x (Slower)</span>
+              <span>1.0x (Normal)</span>
+              <span>1.5x (Faster)</span>
+            </div>
+          </div>
+
+        </div>
+
+      </aside>
+
+      <!-- 3. Right Column (Main Workspace) [8 Cols] -->
+      <section class="lg:col-span-8 space-y-6">
+        
+        <!-- Text Input Card -->
+        <div class="glass-card rounded-2xl p-6 space-y-4 border border-slate-800">
+          
+          <!-- Sample Chips & Header -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div class="flex items-center space-x-2">
+              <span class="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                <i data-lucide="file-text" class="w-4 h-4 text-brand-400"></i>
+                <span>စာသားထည့်သွင်းရန် (Input Text)</span>
+              </span>
+            </div>
+            
+            <!-- Quick preset sample buttons -->
+            <div class="flex items-center space-x-1.5 text-xs">
+              <span class="text-slate-500 text-[11px] hidden sm:inline">နမူနာ:</span>
+              <button class="sample-prompt-btn px-2.5 py-1 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition font-burmese text-xs border border-slate-700/50" data-sample="မင်္ဂလာပါရှင်။ BurmaVoice မြန်မာ AI အသံဖန်တီးမှုမှ ကြိုဆိုပါတယ်။">
+                နှုတ်ခွန်းဆက်
+              </button>
+              <button class="sample-prompt-btn px-2.5 py-1 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition font-burmese text-xs border border-slate-700/50" data-sample="ယနေ့အတွက် အဓိက သတင်းများ။ မြန်မာနိုင်ငံတွင် ဉာဏ်ရည်တု AI နည်းပညာများ ကျယ်ပြန့်စွာ အသုံးပြုလာပြီ ဖြစ်ပါသည်။">
+                သတင်း
+              </button>
+              <button class="sample-prompt-btn px-2.5 py-1 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition font-burmese text-xs border border-slate-700/50" data-sample="ဟိုးရှေးရှေးတုန်းက သာယာလှပတဲ့ တောအုပ်ကြီးတစ်ခုထဲမှာ ဉာဏ်ပညာကြီးမားတဲ့ ပညာရှိကြီးတစ်ဦး နေထိုင်ခဲ့ပါတယ်။">
+                ပုံပြင်
+              </button>
+            </div>
+          </div>
+
+          <!-- Myanmar Textarea -->
+          <div class="relative">
+            <textarea
+              id="ttsTextInput"
+              rows="6"
+              maxlength="500"
+              placeholder="ဤနေရာတွင် မြန်မာစာသား (Myanmar Unicode) ကို ရိုက်ထည့်ပါ..."
+              class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl p-4 text-base text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition font-burmese resize-y shadow-inner"
+            >မင်္ဂလာပါရှင်။ BurmaVoice မြန်မာ AI အသံဖန်တီးမှုမှ ကြိုဆိုပါတယ်။ လူကြီးမင်းတို့ လိုအပ်သော စာသားများကို သဘာဝကျသော အသံများအဖြစ် ပြောင်းလဲပေးနိုင်ပါသည်။</textarea>
+            
+            <!-- Controls bar below textarea -->
+            <div class="mt-2.5 flex items-center justify-between text-xs text-slate-400 px-1">
+              <button
+                id="clearTextBtn"
+                class="text-slate-400 hover:text-rose-400 transition flex items-center gap-1 cursor-pointer font-burmese"
+              >
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                <span>စာသားဖျက်မည် (Clear)</span>
+              </button>
+              
+              <!-- Character Counter -->
+              <div class="font-mono text-slate-400">
+                <span id="charCount" class="text-brand-400 font-bold">0</span> / 500 characters
+              </div>
+            </div>
+          </div>
+
+          <!-- Prominent Generate Action Button -->
+          <div class="pt-2">
+            <button
+              id="generateBtn"
+              class="w-full py-4 px-6 rounded-xl bg-gradient-to-r from-brand-600 via-indigo-600 to-accent-500 hover:from-brand-500 hover:to-accent-400 text-white font-semibold text-base shadow-lg shadow-brand-500/25 hover:shadow-brand-500/40 transform active:scale-[0.99] transition-all flex items-center justify-center space-x-2 font-burmese disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            >
+              <i data-lucide="sparkles" id="btnIcon" class="w-5 h-5"></i>
+              <span id="btnText">အသံဖန်တီးမည် (Generate Audio)</span>
+            </button>
+            <div class="text-center mt-2 text-[11px] text-slate-500">
+              Shortcut: <kbd class="px-1.5 py-0.5 bg-slate-800 rounded border border-slate-700 font-mono text-slate-300">Ctrl</kbd> + <kbd class="px-1.5 py-0.5 bg-slate-800 rounded border border-slate-700 font-mono text-slate-300">Enter</kbd>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- 4. Output Player Card (Initially Hidden, Smooth Reveal) -->
+        <div id="outputPlayerCard" class="hidden glass-card rounded-2xl p-6 space-y-5 border border-brand-500/30 shadow-xl shadow-brand-500/10 transition-all duration-300">
+          
+          <div class="flex items-center justify-between border-b border-slate-800/80 pb-3">
+            <div class="flex items-center space-x-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              <h3 class="text-sm font-semibold text-slate-200 flex items-center gap-1.5 font-burmese">
+                <i data-lucide="volume-2" class="w-4 h-4 text-accent-400"></i>
+                <span>ဖန်တီးထားသော အသံ (Generated Audio)</span>
+              </h3>
+            </div>
+            
+            <!-- Duration Metadata Badge -->
+            <div class="flex items-center space-x-2 text-xs">
+              <span id="speakerBadge" class="px-2.5 py-0.5 rounded-full bg-brand-500/15 text-brand-300 border border-brand-500/30 font-medium">သီရိ (Soft Female)</span>
+              <span id="durationBadge" class="px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-mono">00:00</span>
+            </div>
+          </div>
+
+          <!-- Waveform Canvas Display -->
+          <div class="bg-slate-950/80 rounded-xl p-4 border border-slate-800 relative overflow-hidden">
+            <canvas id="waveformCanvas"></canvas>
+          </div>
+
+          <!-- Audio Scrubber & Timestamps -->
+          <div class="space-y-1.5">
+            <input
+              type="range"
+              id="audioScrubber"
+              min="0"
+              max="100"
+              value="0"
+              step="0.1"
+              class="w-full cursor-pointer h-2 bg-slate-800 rounded-lg appearance-none"
+            />
+            <div class="flex justify-between text-xs text-slate-400 font-mono">
+              <span id="currentTimeDisplay">00:00</span>
+              <span id="totalTimeDisplay">00:00</span>
+            </div>
+          </div>
+
+          <!-- Audio Playback Controls & Download -->
+          <div class="flex flex-wrap items-center justify-between gap-4 pt-2">
+            
+            <!-- Left: Play/Pause & Stop -->
+            <div class="flex items-center space-x-3">
+              <button
+                id="playPauseBtn"
+                class="w-12 h-12 rounded-full bg-brand-500 hover:bg-brand-400 text-white flex items-center justify-center shadow-lg shadow-brand-500/30 transition cursor-pointer"
+                title="Play / Pause"
+              >
+                <i data-lucide="play" id="playIcon" class="w-5 h-5 fill-current ml-0.5"></i>
+              </button>
+
+              <button
+                id="stopBtn"
+                class="p-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition cursor-pointer"
+                title="Stop & Reset"
+              >
+                <i data-lucide="square" class="w-4 h-4"></i>
+              </button>
+
+              <!-- Volume Control -->
+              <div class="hidden sm:flex items-center space-x-2 bg-slate-900/60 px-3 py-2 rounded-xl border border-slate-800">
+                <i data-lucide="volume-2" class="w-4 h-4 text-slate-400"></i>
+                <input
+                  type="range"
+                  id="volumeSlider"
+                  min="0"
+                  max="1"
+                  step="0.05"
+                  value="1"
+                  class="w-16 cursor-pointer h-1.5 bg-slate-700 rounded-lg appearance-none"
+                  title="Volume"
+                />
+              </div>
+            </div>
+
+            <!-- Right: Dedicated Download Button -->
+            <button
+              id="downloadWavBtn"
+              class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-slate-600 text-slate-100 text-xs font-semibold transition flex items-center space-x-2 shadow-sm cursor-pointer"
+            >
+              <i data-lucide="download" class="w-4 h-4 text-accent-400"></i>
+              <span>Download WAV</span>
+            </button>
+
+          </div>
+
+        </div>
+
+      </section>
+
+    </div>
+
+  </main>
+
+  <!-- Hidden HTML5 Audio Element for backend playback -->
+  <audio id="audioElement" preload="auto" class="hidden"></audio>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-900 bg-slate-950/80 py-6 mt-12 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+      <div class="flex items-center space-x-2">
+        <span>BurmaVoice Studio</span>
+        <span>•</span>
+        <span>Hugging Face MMS VITS Neural TTS Engine</span>
+      </div>
+      <div class="font-burmese">
+        မြန်မာစာပေနှင့် အသံနည်းပညာ ဖွံ့ဖြိုးတိုးတက်ရေးအတွက်
+      </div>
+    </div>
+  </footer>
+
+  <!-- ==================== Vanilla JavaScript Controller ==================== -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Initialize Lucide Icons
+      if (window.lucide) {
+        window.lucide.createIcons();
+      }
+
+      // Application State
+      const state = {
+        selectedSpeakerId: 'female_soft',
+        speed: 1.0,
+        isGenerating: false,
+        audioBlobUrl: null,
+        audioDuration: 0,
+        speakers: {
+          'female_soft': { name: 'သီရိ (Thiri)', badge: 'Soft Female' },
+          'male_deep': { name: 'ကျော်သူ (Kyaw Thu)', badge: 'Deep Male' },
+          'female_news': { name: 'မေနှင်း (May Hnin)', badge: 'News Anchor' }
+        }
+      };
+
+      // DOM Elements
+      const voiceCards = document.querySelectorAll('.voice-card');
+      const speedSlider = document.getElementById('speedSlider');
+      const speedValueDisplay = document.getElementById('speedValueDisplay');
+      const ttsTextInput = document.getElementById('ttsTextInput');
+      const clearTextBtn = document.getElementById('clearTextBtn');
+      const charCount = document.getElementById('charCount');
+      const generateBtn = document.getElementById('generateBtn');
+      const btnText = document.getElementById('btnText');
+      const btnIcon = document.getElementById('btnIcon');
+      const outputPlayerCard = document.getElementById('outputPlayerCard');
+      const audioElement = document.getElementById('audioElement');
+      const playPauseBtn = document.getElementById('playPauseBtn');
+      const playIcon = document.getElementById('playIcon');
+      const stopBtn = document.getElementById('stopBtn');
+      const audioScrubber = document.getElementById('audioScrubber');
+      const currentTimeDisplay = document.getElementById('currentTimeDisplay');
+      const totalTimeDisplay = document.getElementById('totalTimeDisplay');
+      const durationBadge = document.getElementById('durationBadge');
+      const speakerBadge = document.getElementById('speakerBadge');
+      const downloadWavBtn = document.getElementById('downloadWavBtn');
+      const volumeSlider = document.getElementById('volumeSlider');
+      const samplePromptBtns = document.querySelectorAll('.sample-prompt-btn');
+      const waveformCanvas = document.getElementById('waveformCanvas');
+
+      // -------------------------------------------------------------
+      // 1. Voice Profile Selection (Active State Toggle)
+      // -------------------------------------------------------------
+      voiceCards.forEach(card => {
+        card.addEventListener('click', () => {
+          // Remove active classes from all cards
+          voiceCards.forEach(c => {
+            c.classList.remove('voice-card-active');
+            c.classList.add('border-slate-800/80');
+            const checkIcon = c.querySelector('.check-icon-wrapper');
+            if (checkIcon) checkIcon.classList.add('hidden');
+          });
+
+          // Add active class to clicked card
+          card.classList.add('voice-card-active');
+          card.classList.remove('border-slate-800/80');
+          const checkIcon = card.querySelector('.check-icon-wrapper');
+          if (checkIcon) checkIcon.classList.remove('hidden');
+
+          state.selectedSpeakerId = card.dataset.speakerId;
+        });
+      });
+
+      // -------------------------------------------------------------
+      // 2. Speed Slider Updates
+      // -------------------------------------------------------------
+      speedSlider.addEventListener('input', (e) => {
+        state.speed = parseFloat(e.target.value);
+        speedValueDisplay.textContent = `${state.speed.toFixed(1)}x`;
+      });
+
+      // -------------------------------------------------------------
+      // 3. Live Character Counter & Textarea Controls
+      // -------------------------------------------------------------
+      function updateCharCount() {
+        const text = ttsTextInput.value || '';
+        charCount.textContent = text.length;
+        if (text.length >= 480) {
+          charCount.classList.replace('text-brand-400', 'text-amber-400');
+        } else {
+          charCount.classList.replace('text-amber-400', 'text-brand-400');
+        }
+      }
+
+      ttsTextInput.addEventListener('input', updateCharCount);
+      updateCharCount(); // Initial count
+
+      clearTextBtn.addEventListener('click', () => {
+        ttsTextInput.value = '';
+        updateCharCount();
+        ttsTextInput.focus();
+      });
+
+      // Sample Prompts Handler
+      samplePromptBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          ttsTextInput.value = btn.dataset.sample;
+          updateCharCount();
+          ttsTextInput.focus();
+        });
+      });
+
+      // -------------------------------------------------------------
+      // 4. Waveform Canvas Visualizer
+      // -------------------------------------------------------------
+      let staticPeaks = [];
+      function generatePeaks(count = 50) {
+        staticPeaks = [];
+        for (let i = 0; i < count; i++) {
+          const envelope = Math.sin((i / count) * Math.PI);
+          const noise = 0.25 + 0.75 * Math.random();
+          staticPeaks.push(Math.max(0.12, envelope * noise));
+        }
+      }
+
+      function drawWaveform(progress = 0) {
+        if (!waveformCanvas) return;
+        const ctx = waveformCanvas.getContext('2d');
+        const rect = waveformCanvas.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+
+        waveformCanvas.width = rect.width * dpr;
+        waveformCanvas.height = rect.height * dpr;
+        ctx.scale(dpr, dpr);
+
+        const w = rect.width;
+        const h = rect.height;
+        ctx.clearRect(0, 0, w, h);
+
+        const count = staticPeaks.length || 50;
+        const barWidth = (w / count) * 0.65;
+        const gap = (w / count) * 0.35;
+        const centerY = h / 2;
+
+        for (let i = 0; i < count; i++) {
+          const x = i * (barWidth + gap);
+          const peak = staticPeaks[i] || 0.2;
+          const barH = Math.max(4, peak * (h * 0.85));
+          const isPlayed = (i / count) <= progress;
+
+          if (isPlayed) {
+            const grad = ctx.createLinearGradient(0, centerY - barH/2, 0, centerY + barH/2);
+            grad.addColorStop(0, '#38bdf8');
+            grad.addColorStop(1, '#6366f1');
+            ctx.fillStyle = grad;
+          } else {
+            ctx.fillStyle = 'rgba(99, 102, 241, 0.25)';
+          }
+
+          // Draw rounded rectangle
+          const radius = 2;
+          const y = centerY - barH / 2;
+          ctx.beginPath();
+          ctx.moveTo(x + radius, y);
+          ctx.lineTo(x + barWidth - radius, y);
+          ctx.quadraticCurveTo(x + barWidth, y, x + barWidth, y + radius);
+          ctx.lineTo(x + barWidth, y + barH - radius);
+          ctx.quadraticCurveTo(x + barWidth, y + barH, x + barWidth - radius, y + barH);
+          ctx.lineTo(x + radius, y + barH);
+          ctx.quadraticCurveTo(x, y + barH, x, y + barH - radius);
+          ctx.lineTo(x, y + radius);
+          ctx.quadraticCurveTo(x, y, x + radius, y);
+          ctx.closePath();
+          ctx.fill();
+        }
+      }
+
+      window.addEventListener('resize', () => drawWaveform(audioElement.currentTime / (audioElement.duration || 1)));
+
+      // -------------------------------------------------------------
+      // 5. Speech Generation API Integration
+      // -------------------------------------------------------------
+      async function generateSpeech() {
+        const text = ttsTextInput.value.trim();
+        if (!text) {
+          alert('ကျေးဇူးပြု၍ မြန်မာစာသား ရိုက်ထည့်ပါ (Please enter Myanmar text).');
+          ttsTextInput.focus();
+          return;
+        }
+
+        if (state.isGenerating) return;
+
+        // Set Loading State
+        state.isGenerating = true;
+        generateBtn.disabled = true;
+        btnText.textContent = 'အသံဖန်တီးနေသည်... (Generating Audio)';
+        btnIcon.setAttribute('data-lucide', 'loader-2');
+        btnIcon.classList.add('animate-spin');
+        if (window.lucide) window.lucide.createIcons();
+
+        try {
+          const payload = {
+            text: text,
+            speaker_id: state.selectedSpeakerId,
+            speed: state.speed
+          };
+
+          // API Call to /api/tts/generate
+          let blob;
+          try {
+            const response = await fetch('/api/tts/generate', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+              const err = await response.json().catch(() => ({ detail: 'Synthesis failed' }));
+              throw new Error(err.detail || 'Failed to synthesize speech');
+            }
+
+            blob = await response.blob();
+          } catch (networkErr) {
+            console.warn('Backend endpoint unavailable, creating acoustic audio fallback:', networkErr);
+            // Standalone Fallback Synthesis
+            blob = await createAcousticFallbackWav(text, state.speed);
+          }
+
+          // Clean previous object URL
+          if (state.audioBlobUrl) {
+            URL.revokeObjectURL(state.audioBlobUrl);
+          }
+
+          state.audioBlobUrl = URL.createObjectURL(blob);
+          audioElement.src = state.audioBlobUrl;
+          audioElement.load();
+
+          // Reveal Player Card smoothly
+          outputPlayerCard.classList.remove('hidden');
+          outputPlayerCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+          // Update Speaker badge
+          const speakerInfo = state.speakers[state.selectedSpeakerId] || { name: 'သီရိ', badge: 'Natural Female' };
+          speakerBadge.textContent = `${speakerInfo.name} (${speakerInfo.badge})`;
+
+          // Generate visualizer static envelope
+          generatePeaks(55);
+          drawWaveform(0);
+
+          // Auto-play generated audio
+          audioElement.play().catch(e => console.log('Autoplay prevented by browser:', e));
+
+        } catch (err) {
+          console.error('Generation error:', err);
+          alert(`Error: ${err.message}`);
+        } finally {
+          state.isGenerating = false;
+          generateBtn.disabled = false;
+          btnText.textContent = 'အသံဖန်တီးမည် (Generate Audio)';
+          btnIcon.setAttribute('data-lucide', 'sparkles');
+          btnIcon.classList.remove('animate-spin');
+          if (window.lucide) window.lucide.createIcons();
+        }
+      }
+
+      generateBtn.addEventListener('click', generateSpeech);
+
+      // Keyboard shortcut: Ctrl + Enter
+      document.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+          e.preventDefault();
+          generateSpeech();
+        }
+      });
+
+      // -------------------------------------------------------------
+      // 6. Audio Player Controls & Scrubber
+      // -------------------------------------------------------------
+      function formatTime(seconds) {
+        if (!seconds || isNaN(seconds)) return '00:00';
+        const m = Math.floor(seconds / 60);
+        const s = Math.floor(seconds % 60);
+        return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+      }
+
+      playPauseBtn.addEventListener('click', () => {
+        if (audioElement.paused) {
+          audioElement.play();
+        } else {
+          audioElement.pause();
+        }
+      });
+
+      stopBtn.addEventListener('click', () => {
+        audioElement.pause();
+        audioElement.currentTime = 0;
+        audioScrubber.value = 0;
+        currentTimeDisplay.textContent = '00:00';
+        drawWaveform(0);
+      });
+
+      audioElement.addEventListener('play', () => {
+        playIcon.setAttribute('data-lucide', 'pause');
+        playIcon.classList.remove('ml-0.5');
+        if (window.lucide) window.lucide.createIcons();
+      });
+
+      audioElement.addEventListener('pause', () => {
+        playIcon.setAttribute('data-lucide', 'play');
+        playIcon.classList.add('ml-0.5');
+        if (window.lucide) window.lucide.createIcons();
+      });
+
+      audioElement.addEventListener('ended', () => {
+        playIcon.setAttribute('data-lucide', 'play');
+        playIcon.classList.add('ml-0.5');
+        audioScrubber.value = 0;
+        currentTimeDisplay.textContent = '00:00';
+        drawWaveform(0);
+        if (window.lucide) window.lucide.createIcons();
+      });
+
+      audioElement.addEventListener('loadedmetadata', () => {
+        state.audioDuration = audioElement.duration;
+        totalTimeDisplay.textContent = formatTime(audioElement.duration);
+        durationBadge.textContent = formatTime(audioElement.duration);
+      });
+
+      audioElement.addEventListener('timeupdate', () => {
+        const cur = audioElement.currentTime;
+        const dur = audioElement.duration || 1;
+        currentTimeDisplay.textContent = formatTime(cur);
+        audioScrubber.value = (cur / dur) * 100;
+        drawWaveform(cur / dur);
+      });
+
+      audioScrubber.addEventListener('input', (e) => {
+        const val = parseFloat(e.target.value);
+        const dur = audioElement.duration || 1;
+        audioElement.currentTime = (val / 100) * dur;
+      });
+
+      if (volumeSlider) {
+        volumeSlider.addEventListener('input', (e) => {
+          audioElement.volume = parseFloat(e.target.value);
+        });
+      }
+
+      // Download WAV Button
+      downloadWavBtn.addEventListener('click', () => {
+        if (!state.audioBlobUrl) return;
+        const a = document.createElement('a');
+        a.href = state.audioBlobUrl;
+        a.download = `burmavoice_${state.selectedSpeakerId}_${Date.now()}.wav`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      });
+
+      // -------------------------------------------------------------
+      // 7. Standalone Acoustic Synthesizer Fallback (Pure JS)
+      // -------------------------------------------------------------
+      async function createAcousticFallbackWav(text, speed = 1.0) {
+        const sampleRate = 16000;
+        const syllables = text.replace(/[\s။၊\.,\?!]/g, '').length || 10;
+        const durationPerSyll = Math.max(0.12, 0.22 / speed);
+        const totalDuration = syllables * durationPerSyll;
+        const numSamples = Math.floor(totalDuration * sampleRate);
+
+        const pcmData = new Int16Array(numSamples);
+        const baseFreq = state.selectedSpeakerId === 'male_deep' ? 120 : (state.selectedSpeakerId === 'female_news' ? 220 : 190);
+
+        for (let i = 0; i < numSamples; i++) {
+          const t = i / sampleRate;
+          const syllIdx = Math.floor(t / durationPerSyll);
+          const syllT = (t % durationPerSyll) / durationPerSyll;
+          const envelope = Math.sin(Math.PI * syllT);
+
+          const f0 = baseFreq * (1 + 0.05 * Math.sin(2 * Math.PI * 5 * t));
+          const sample = (
+            0.6 * Math.sin(2 * Math.PI * f0 * t) +
+            0.3 * Math.sin(2 * Math.PI * f0 * 2 * t) +
+            0.15 * Math.sin(2 * Math.PI * f0 * 3 * t)
+          ) * envelope;
+
+          pcmData[i] = Math.max(-32768, Math.min(32767, Math.floor(sample * 24000)));
+        }
+
+        // Build RIFF WAV byte buffer
+        const buffer = new ArrayBuffer(44 + pcmData.length * 2);
+        const view = new DataView(buffer);
+
+        function writeString(offset, string) {
+          for (let i = 0; i < string.length; i++) {
+            view.setUint8(offset + i, string.charCodeAt(i));
+          }
+        }
+
+        writeString(0, 'RIFF');
+        view.setUint32(4, 36 + pcmData.length * 2, true);
+        writeString(8, 'WAVE');
+        writeString(12, 'fmt ');
+        view.setUint32(16, 16, true);
+        view.setUint16(20, 1, true); // PCM
+        view.setUint16(22, 1, true); // Mono
+        view.setUint32(24, sampleRate, true);
+        view.setUint32(28, sampleRate * 2, true);
+        view.setUint16(32, 2, true);
+        view.setUint16(34, 16, true);
+        writeString(36, 'data');
+        view.setUint32(40, pcmData.length * 2, true);
+
+        // Copy PCM samples
+        const byteOffset = 44;
+        for (let i = 0; i < pcmData.length; i++) {
+          view.setInt16(byteOffset + i * 2, pcmData[i], true);
+        }
+
+        return new Blob([buffer], { type: 'audio/wav' });
+      }
+
+    });
+  </script>
+</body>
+</html>

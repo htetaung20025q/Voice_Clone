@@ -1,0 +1,62 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Myanmar:wght@400;500;600;700&family=Padauk:wght@400;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-white text-zinc-900 font-sans antialiased selection:bg-[#991B1B] selection:text-white;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+}
+
+/* Subtle Myanmar Traditional Acheik/Textile-inspired minimal geometric line pattern */
+.bg-myanmar-pattern {
+  background-image: radial-gradient(rgba(153, 27, 27, 0.04) 1px, transparent 1px), radial-gradient(rgba(217, 119, 6, 0.03) 1px, transparent 1px);
+  background-size: 32px 32px;
+  background-position: 0 0, 16px 16px;
+}
+
+.bg-acheik-lines {
+  background-image: repeating-linear-gradient(45deg, rgba(153, 27, 27, 0.02) 0, rgba(153, 27, 27, 0.02) 1px, transparent 0, transparent 20px);
+}
+
+/* Minimal light scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f4f4f5;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d4d4d8;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a1a1aa;
+}
+
+/* Range input styling with Myanmar red accent */
+input[type="range"] {
+  accent-color: #991B1B;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  width: 14px;
+  height: 14px;
+  background-color: #991B1B;
+  border-radius: 9999px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  transition: transform 0.15s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
