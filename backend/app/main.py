@@ -11,7 +11,9 @@ from fastapi.exceptions import RequestValidationError
 
 from app.config import settings
 from app.routes.tts import router as tts_router
+from app.routes.voice import router as voice_router
 from app.services.gemini_tts import tts_service
+from app.services.voice_replication import replication_service
 
 # Configure logging
 logging.basicConfig(
@@ -70,7 +72,9 @@ app.add_middleware(
         "X-Audio-Voice-Name",
         "X-Audio-Style",
         "X-Audio-Language",
-        "X-Audio-Mock"
+        "X-Audio-Mock",
+        "X-Audio-Voice-Session",
+        "X-Audio-Voice-Type"
     ]
 )
 
@@ -95,6 +99,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 # Register routes
 app.include_router(tts_router)
+app.include_router(voice_router)
 
 
 @app.get("/", tags=["General"])
@@ -108,6 +113,9 @@ async def root():
         "docs": "/docs",
         "endpoints": {
             "tts": "/api/v1/tts",
+            "voice_replication": "/api/v1/voice/replicate",
+            "tts_voice_replication": "/api/v1/tts/voice-replication",
+            "consent_scripts": "/api/v1/voice/consent-scripts",
             "voices": "/api/v1/voices",
             "styles": "/api/v1/styles",
             "health": "/api/v1/health"

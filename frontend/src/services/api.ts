@@ -51,12 +51,47 @@ export interface TTSResponseMetadata {
   sample_rate: number;
   latency_ms: number;
   is_mock?: boolean;
+  is_replicated?: boolean;
+  voice_session_id?: string;
 }
 
 export interface TTSResult {
   audioBlob: Blob;
   audioUrl: string;
   metadata: TTSResponseMetadata;
+}
+
+export interface VoiceConsentScript {
+  id: string;
+  name: string;
+  consent_statement: string;
+  default_sample: string;
+}
+
+export interface VoiceReplicationResponse {
+  success: boolean;
+  voice_session_id: string;
+  expires_at: string;
+  duration_seconds: number;
+  sample_rate: number;
+  message: string;
+}
+
+export interface VoiceSessionStatus {
+  voice_session_id: string;
+  is_valid: boolean;
+  expires_at: string;
+  seconds_remaining: number;
+  duration_seconds: number;
+  sample_rate: number;
+}
+
+export interface ReplicatedTTSRequest {
+  voice_session_id: string;
+  text: string;
+  language_code?: string;
+  speed?: number;
+  pitch?: number;
 }
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -251,5 +286,151 @@ export class VoiceStudioAPI {
     };
 
     return { audioBlob, audioUrl, metadata };
+  }
+
+  /**
+   * Fetch official Google Cloud Voice Replication consent statements.
+   */
+  static async getConsentScripts(): Promise<VoiceConsentScript[]> {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/voice/consent-scripts`);
+      if (!res.ok) throw new Error('Failed to fetch consent scripts');
+      return await res.json();
+    } catch {
+      return [
+        {
+          id: 'my-MM',
+          name: 'မြန်မာ (Burmese)',
+          consent_statement: 'ကျွန်ုပ်သည် ဤအသံ၏ပိုင်ရှင်ဖြစ်ပြီး Google Cloud ကိုအသုံးပြုခြင်းဖြင့် ကျွန်ုပ်၏အသံ၏ ပေါင်းစပ်ပုံစံတစ်ခု ဖန်တီးရန် သဘောတူပါသည်။',
+          default_sample: 'မင်္ဂလာပါ။ ဒီနေ့ကောင်းမွန်တဲ့နေ့တစ်နေ့ဖြစ်ပါစေ။',
+        },
+        {
+          id: 'en-US',
+          name: 'English (US)',
+          consent_statement: 'I am the owner of this voice and I consent to Google Cloud using this voice to create a synthetic voice model.',
+          default_sample: 'Hello. This is a voice replication test.',
+        }
+      ];
+    }
+  }
+
+  /**
+   * Create a temporary Voice Replication key by uploading reference and consent audio.
+   */
+  static async replicateVoice(
+    sourceFile: File,
+    consentFile: File,
+    consentConfirmed: boolean,
+    languageCode: string = 'my-MM'
+  ): Promise<VoiceReplicationResponse> {
+    if (!consentConfirmed) {
+      throw new Error('Please confirm that you own this voice or have permission to use it.');
+    }
+    if (!sourceFile) {
+      throw new Error('Please upload a voice sample.');
+    }
+    if (!consentFile) {
+      throw new Error('Please upload the required consent recording.');
+    }
+
+    const formData = new FormData();
+    formData.append('source_audio', sourceFile);
+    formData.append('consent_audio', consentFile);
+    formData.append('consent_confirmed', String(consentConfirmed));
+    formData.append('language_code', languageCode);
+
+    const res = await fetch(`${API_BASE}/api/v1/voice/replicate`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!res.ok) {
+      let errorMessage = 'Voice replication failed. Please try again.';
+      try {
+        const errJson = await res.json();
+        errorMessage = errJson.detail || errJson.message || errorMessage;
+      } catch {
+        errorMessage = `Replication failed with status ${res.status}`;
+      }
+      throw new Error(errorMessage);
+    }
+
+    return await res.json();
+  }
+
+  /**
+   * Synthesize speech using a verified temporary voice replication session.
+   */
+  static async synthesizeReplicated(req: ReplicatedTTSRequest): Promise<TTSResult> {
+    const trimmed = req.text.trim();
+    if (!trimmed) {
+      throw new Error('Text is required to generate speech.');
+    }
+    if (trimmed.length > 5000) {
+      throw new Error('Text exceeds the maximum allowed length of 5,000 characters.');
+    }
+    if (!req.voice_session_id) {
+      throw new Error('A valid voice replication session is required.');
+    }
+
+    const startTime = performance.now();
+    const res = await fetch(`${API_BASE}/api/v1/tts/voice-replication`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        voice_session_id: req.voice_session_id,
+        text: trimmed,
+        language_code: req.language_code || 'my-MM',
+        speed: req.speed || 1.0,
+        pitch: req.pitch || 0.0,
+      }),
+    });
+
+    if (!res.ok) {
+      let errorMessage = 'Voice generation failed. Please try again.';
+      try {
+        const errorData = await res.json();
+        errorMessage = errorData.detail || errorData.message || errorMessage;
+      } catch {
+        errorMessage = `Synthesis failed with server status ${res.status}`;
+      }
+      throw new Error(errorMessage);
+    }
+
+    const durationHeader = res.headers.get('X-Audio-Duration');
+    const latencyHeader = res.headers.get('X-Audio-Latency-Ms');
+    const langHeader = res.headers.get('X-Audio-Language');
+    const mockHeader = res.headers.get('X-Audio-Mock');
+    const sessionHeader = res.headers.get('X-Audio-Voice-Session');
+
+    const audioBlob = await res.blob();
+    const audioUrl = URL.createObjectURL(audioBlob);
+    const clientLatency = Math.round(performance.now() - startTime);
+
+    const metadata: TTSResponseMetadata = {
+      voice: 'replicated',
+      voice_name: 'Replicated Voice (စိတ်ကြိုက်အသံ)',
+      style: 'custom',
+      language: langHeader || req.language_code || 'my-MM',
+      character_count: trimmed.length,
+      duration_seconds: durationHeader ? parseFloat(durationHeader) : 0,
+      format: 'audio/wav',
+      sample_rate: 24000,
+      latency_ms: latencyHeader ? parseFloat(latencyHeader) : clientLatency,
+      is_mock: mockHeader === 'true',
+      is_replicated: true,
+      voice_session_id: sessionHeader || req.voice_session_id,
+    };
+
+    return { audioBlob, audioUrl, metadata };
+  }
+
+  /**
+   * Check status of a temporary voice session.
+   */
+  static async getSessionStatus(sessionId: string): Promise<VoiceSessionStatus> {
+    const res = await fetch(`${API_BASE}/api/v1/voice/session/${encodeURIComponent(sessionId)}`);
+    if (!res.ok) throw new Error('Session not found or expired');
+    return await res.json();
   }
 }

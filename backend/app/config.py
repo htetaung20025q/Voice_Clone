@@ -24,7 +24,15 @@ class Settings(BaseSettings):
     
     # Gemini API Key (Server-side only)
     GEMINI_API_KEY: str = Field(default="", validation_alias="GEMINI_API_KEY")
-    GEMINI_MODEL: str = Field(default="gemini-2.5-flash-preview-tts", validation_alias="GEMINI_MODEL")
+    GEMINI_MODEL: str = Field(default="gemini-3.1-flash-tts-preview", validation_alias="GEMINI_MODEL")
+    
+    # Google Cloud Voice Replication Configuration
+    GCP_PROJECT_ID: str = Field(default="", validation_alias="GCP_PROJECT_ID")
+    GOOGLE_APPLICATION_CREDENTIALS: str = Field(default="", validation_alias="GOOGLE_APPLICATION_CREDENTIALS")
+    GCP_SERVICE_ACCOUNT_JSON: str = Field(default="", validation_alias="GCP_SERVICE_ACCOUNT_JSON")
+    VOICE_REPLICATION_MODEL: str = Field(default="gemini-3.1-flash-tts-preview", validation_alias="VOICE_REPLICATION_MODEL")
+    VOICE_SESSION_TTL_HOURS: int = 168  # 7 days (Google temporary replication key validity)
+    MAX_AUDIO_UPLOAD_SIZE_MB: int = 25
     
     # Text limits
     MAX_TEXT_LENGTH: int = 5000
@@ -45,6 +53,27 @@ class Settings(BaseSettings):
         if not self.ALLOWED_ORIGINS:
             return ["http://localhost:5173", "http://127.0.0.1:5173"]
         return [origin.strip() for origin in self.ALLOWED_ORIGINS.split(",") if origin.strip()]
+
+
+# Official Google Cloud Voice Consent Statements
+BURMESE_CONSENT_STATEMENT = "ကျွန်ုပ်သည် ဤအသံ၏ပိုင်ရှင်ဖြစ်ပြီး Google Cloud ကိုအသုံးပြုခြင်းဖြင့် ကျွန်ုပ်၏အသံ၏ ပေါင်းစပ်ပုံစံတစ်ခု ဖန်တီးရန် သဘောတူပါသည်။"
+ENGLISH_CONSENT_STATEMENT = "I am the owner of this voice and I consent to Google Cloud using this voice to create a synthetic voice model."
+
+# Supported Voice Replication Languages
+SUPPORTED_REPLICATION_LANGUAGES: List[Dict[str, str]] = [
+    {
+        "id": "my-MM",
+        "name": "မြန်မာ (Burmese)",
+        "consent_statement": BURMESE_CONSENT_STATEMENT,
+        "default_sample": "မင်္ဂလာပါ။ ဒီနေ့ကောင်းမွန်တဲ့နေ့တစ်နေ့ဖြစ်ပါစေ။"
+    },
+    {
+        "id": "en-US",
+        "name": "English (US)",
+        "consent_statement": ENGLISH_CONSENT_STATEMENT,
+        "default_sample": "Hello. This is a voice replication test."
+    }
+]
 
 
 # Supported Myanmar AI Voices (Mapped to high-fidelity Gemini neural voices)

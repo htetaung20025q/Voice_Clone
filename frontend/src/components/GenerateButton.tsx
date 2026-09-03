@@ -10,6 +10,8 @@ interface GenerateButtonProps {
   onClick: () => void;
   disabled?: boolean;
   language: Language;
+  buttonLabel?: string;
+  loadingLabel?: string;
 }
 
 export const GenerateButton: React.FC<GenerateButtonProps> = ({
@@ -17,6 +19,8 @@ export const GenerateButton: React.FC<GenerateButtonProps> = ({
   onClick,
   disabled = false,
   language,
+  buttonLabel,
+  loadingLabel,
 }) => {
   const t = translations[language].studio;
   const isLoading = state === 'loading';
@@ -38,7 +42,7 @@ export const GenerateButton: React.FC<GenerateButtonProps> = ({
       {isLoading ? (
         <>
           <Loader2 className="w-5 h-5 animate-spin text-white shrink-0" />
-          <span className="font-burmese">{t.generatingBtn}</span>
+          <span className="font-burmese">{loadingLabel || t.generatingBtn}</span>
         </>
       ) : isSuccess ? (
         <>
@@ -48,7 +52,7 @@ export const GenerateButton: React.FC<GenerateButtonProps> = ({
       ) : (
         <>
           <Sparkles className="w-5 h-5 text-amber-300 shrink-0" />
-          <span className="font-burmese">{t.generateBtn}</span>
+          <span className="font-burmese">{buttonLabel || t.generateBtn}</span>
         </>
       )}
     </button>

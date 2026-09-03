@@ -43,6 +43,31 @@ export interface TranslationDictionary {
     downloadBtn: string;
     generateAgainBtn: string;
     errorNotice: string;
+    // Voice Replication Mode
+    modeStandard: string;
+    modeReplication: string;
+    replicationTitle: string;
+    replicationSubtitle: string;
+    sourceSampleTitle: string;
+    sourceSampleDesc: string;
+    sourceSampleHint: string;
+    consentRecordingTitle: string;
+    consentRecordingDesc: string;
+    consentScriptLabel: string;
+    consentCopyBtn: string;
+    consentCopied: string;
+    consentConfirmLabel: string;
+    creatingVoiceBtn: string;
+    generatingSpeechBtn: string;
+    replicatedVoiceReady: string;
+    replicatedVoiceTag: string;
+    removeAudio: string;
+    clickToUpload: string;
+    dragAndDrop: string;
+    audioDuration: string;
+    replicateSuccessNotice: string;
+    accessRequiredTitle: string;
+    accessRequiredNotice: string;
   };
   features: {
     title: string;
@@ -127,6 +152,31 @@ export const translations: Record<Language, TranslationDictionary> = {
       downloadBtn: 'အသံဖိုင် ဒေါင်းလုဒ်ယူရန်',
       generateAgainBtn: 'အသစ်ပြန်လည် ဖန်တီးရန်',
       errorNotice: 'အသံဖန်တီးရာတွင် အမှားတစ်ခု ဖြစ်ပေါ်ခဲ့ပါသည်။ ကျေးဇူးပြု၍ ထပ်မံကြိုးစားကြည့်ပါ။',
+      // Voice Replication Mode
+      modeStandard: 'စံပြု အသံဖန်တီးမှု (Standard TTS)',
+      modeReplication: 'အသံပုံတူ ဖန်တီးမှု (Voice Replication)',
+      replicationTitle: 'စိတ်ကြိုက် အသံပုံတူ ဖန်တီးမှု',
+      replicationSubtitle: 'မိမိ၏ အသံနမူနာနှင့် ခွင့်ပြုချက်အသံကို အသုံးပြု၍ ကိုယ်ပိုင် အသံပုံစံဖြင့် စကားပြောထုတ်ယူပါ',
+      sourceSampleTitle: '၁။ အသံနမူနာ ဖိုင်တင်ရန် (Voice Sample)',
+      sourceSampleDesc: 'ကြည်လင်ပြတ်သားသော ၁၀ မှ ၃၀ စက္ကန့် အသံဖိုင် တင်ပါ',
+      sourceSampleHint: 'အသံဖိုင်ကို WAV, MP3, M4A, OGG, FLAC သို့မဟုတ် WebM format ဖြင့် ထည့်နိုင်ပါသည်။ (၁၀ မှ ၃၀ စက္ကန့်)',
+      consentRecordingTitle: '၂။ ခွင့်ပြုချက် အသံသွင်းဖိုင် (Consent Audio)',
+      consentRecordingDesc: 'အသံပိုင်ရှင်သည် သတ်မှတ်ထားသော ခွင့်ပြုချက် စာသားကို ဖတ်ကြားအသံသွင်းထားသည့်ဖိုင် တင်ပါ',
+      consentScriptLabel: 'ဖတ်ကြားရမည့် တရားဝင် ခွင့်ပြုချက် စာသား',
+      consentCopyBtn: 'စာသားကူးယူရန်',
+      consentCopied: 'ကူးယူပြီးပါပြီ!',
+      consentConfirmLabel: 'ကျွန်ုပ်သည် ဤအသံ၏ပိုင်ရှင်ဖြစ်ကြောင်း သို့မဟုတ် အသံပုံတူဖန်တီးရန် အသံပိုင်ရှင်ထံမှ တရားဝင်ခွင့်ပြုချက် ရရှိထားကြောင်း အတည်ပြုပါသည်။',
+      creatingVoiceBtn: 'အသံပုံတူ ဖန်တီးနေပါသည်...',
+      generatingSpeechBtn: 'စကားပြော အသံထွက်ထုတ်နေပါသည်...',
+      replicatedVoiceReady: 'ပုံတူအသံဖြင့် စကားပြော ဖန်တီးပြီးပါပြီ',
+      replicatedVoiceTag: 'စိတ်ကြိုက် ပုံတူအသံ (Replicated Voice)',
+      removeAudio: 'အသံဖိုင်ဖျက်ရန်',
+      clickToUpload: 'ဖိုင်ရွေးချယ်ရန် နှိပ်ပါ',
+      dragAndDrop: 'သို့မဟုတ် ဖိုင်ကို ဤနေရာသို့ ဆွဲထည့်ပါ (WAV, MP3, M4A, OGG, FLAC, WebM)',
+      audioDuration: 'ကြာချိန်',
+      replicateSuccessNotice: 'အသံပုံတူ key ကို အောင်မြင်စွာ ဖန်တီးပြီးပါပြီ။ ၇ ရက်အတွင်း ဆက်လက်အသုံးပြုနိုင်ပါသည်။',
+      accessRequiredTitle: 'Google Cloud Voice Replication ခွင့်ပြုချက် လိုအပ်ချက်',
+      accessRequiredNotice: 'ကုဒ်ပိုင်းဆိုင်ရာ အားလုံး အဆင်သင့်ဖြစ်ပြီဖြစ်သော်လည်း Voice Replication ကို အသုံးပြုရန် Google Cloud Project Allowlist ခွင့်ပြုချက် လိုအပ်ပါသည်။',
     },
     features: {
       title: 'အဓိက အင်္ဂါရပ်များ',
@@ -209,6 +259,31 @@ export const translations: Record<Language, TranslationDictionary> = {
       downloadBtn: 'Download Audio',
       generateAgainBtn: 'Generate Again',
       errorNotice: "We couldn't generate the voice. Please try again.",
+      // Voice Replication Mode
+      modeStandard: 'Standard TTS',
+      modeReplication: 'Voice Replication',
+      replicationTitle: 'Custom Voice Replication',
+      replicationSubtitle: 'Upload a voice sample and verified consent to generate speech in the replicated voice.',
+      sourceSampleTitle: '1. Upload Voice Sample',
+      sourceSampleDesc: 'Upload a clean 10–30 second voice recording.',
+      sourceSampleHint: 'Supported formats: WAV, MP3, M4A, OGG, FLAC, or WebM (10–30s clean recording).',
+      consentRecordingTitle: '2. Upload Consent Recording',
+      consentRecordingDesc: 'The voice owner must read the required consent statement.',
+      consentScriptLabel: 'Required Consent Script',
+      consentCopyBtn: 'Copy Script',
+      consentCopied: 'Copied!',
+      consentConfirmLabel: 'I confirm that I own this voice or have explicit permission from the voice owner to create a replicated voice.',
+      creatingVoiceBtn: 'Creating voice...',
+      generatingSpeechBtn: 'Generating speech...',
+      replicatedVoiceReady: 'Speech synthesized in replicated voice',
+      replicatedVoiceTag: 'Replicated Voice',
+      removeAudio: 'Remove',
+      clickToUpload: 'Click to upload',
+      dragAndDrop: 'or drag and drop audio file (WAV, MP3, M4A, OGG, FLAC, WebM)',
+      audioDuration: 'Duration',
+      replicateSuccessNotice: 'Voice replication session active (valid for 7 days).',
+      accessRequiredTitle: 'Google Cloud Voice Replication Access Requirement',
+      accessRequiredNotice: 'Implementation is ready and verified. However, live Google Cloud Voice Replication requires project allowlisting from Google Cloud.',
     },
     features: {
       title: 'Core Capabilities',

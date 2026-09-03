@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Play, Pause, Download, RotateCcw, Volume2, VolumeX, CheckCircle2 } from 'lucide-react';
+import { Play, Pause, Download, RotateCcw, Volume2, VolumeX, CheckCircle2, Copy, Check, Sparkles } from 'lucide-react';
 import type { TTSResponseMetadata } from '../services/api';
 import type { Language } from '../services/i18n';
 import { translations } from '../services/i18n';
@@ -9,6 +9,7 @@ interface AudioPlayerProps {
   metadata: TTSResponseMetadata | null;
   onGenerateAgain?: () => void;
   language: Language;
+  textToCopy?: string;
 }
 
 export const AudioPlayer: React.FC<AudioPlayerProps> = ({
@@ -16,6 +17,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   metadata,
   onGenerateAgain,
   language,
+  textToCopy,
 }) => {
   const t = translations[language].studio;
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -24,6 +26,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(1.0);
   const [isMuted, setIsMuted] = useState(false);
+  const [copiedText, setCopiedText] = useState(false);
 
   const [playbackRate, setPlaybackRate] = useState(1.0);
 
@@ -149,7 +152,17 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
             <CheckCircle2 className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-zinc-900 font-burmese">{t.readyTitle}</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-bold text-zinc-900 font-burmese">
+                {metadata?.is_replicated ? t.replicatedVoiceReady : t.readyTitle}
+              </h3>
+              {metadata?.is_replicated && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300/80 font-mono">
+                  <Sparkles className="w-3 h-3 text-amber-600" />
+                  <span>Replicated</span>
+                </span>
+              )}
+            </div>
             <div className="flex items-center gap-1.5 text-xs text-zinc-500 mt-0.5">
               <span className="font-semibold text-myanmar-red">{metadata?.voice_name}</span>
               <span>•</span>
@@ -297,7 +310,33 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center gap-2 ml-auto">
+        <div className="flex items-center gap-2 ml-auto flex-wrap">
+          {textToCopy && (
+            <button
+              type="button"
+              onClick={() => {
+                navigator.clipboard.writeText(textToCopy).then(() => {
+                  setCopiedText(true);
+                  setTimeout(() => setCopiedText(false), 2000);
+                });
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50 border border-zinc-200 transition-colors cursor-pointer"
+              title="Copy synthesized text"
+            >
+              {copiedText ? (
+                <>
+                  <Check className="w-3.5 h-3.5 text-emerald-600" />
+                  <span className="text-emerald-700 font-medium">Copied!</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3.5 h-3.5 text-zinc-400" />
+                  <span className="font-burmese">{language === 'my' ? 'စာသားကူးယူရန်' : 'Copy text'}</span>
+                </>
+              )}
+            </button>
+          )}
+
           {onGenerateAgain && (
             <button
               type="button"
