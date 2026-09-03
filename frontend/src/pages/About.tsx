@@ -35,8 +35,8 @@ export const About: React.FC<AboutProps> = ({ onOpenStudio, language }) => {
         </h2>
         <p className="text-sm text-zinc-600 leading-relaxed">
           {language === 'my'
-            ? 'မြန်မာဘာသာစကား၏ အသံထွက်၊ လေယူလေသိမ်းနှင့် သဒ္ဒါစည်းမျဉ်းများသည် အခြားဘာသာစကားများနှင့် မတူဘဲ ထူးခြားဆန်းကြယ်လှပါသည်။ BurmaVoice သည် မြန်မာစာလုံးပေါင်း သတ်ပုံများနှင့် အသံထွက်များကို အမှန်ကန်ဆုံး ဖတ်ကြားပေးနိုင်ရန် ခေတ်မီ Gemini Multimodal AI နည်းပညာဖြင့် ဖန်တီးထားပါသည်။'
-            : 'Burmese is a rich, tonal language with distinct phonology, complex diacritics, and nuanced syllable boundaries. BurmaVoice bridges state-of-the-art multimodal AI voice models with precise Myanmar Unicode processing so creators and developers can produce authentic speech effortlessly.'}
+            ? 'မြန်မာဘာသာစကား၏ အသံထွက်၊ လေယူလေသိမ်းနှင့် သဒ္ဒါစည်းမျဉ်းများသည် အခြားဘာသာစကားများနှင့် မတူဘဲ ထူးခြားဆန်းကြယ်လှပါသည်။ BurmeseATAN သည် မြန်မာစာလုံးပေါင်း သတ်ပုံများနှင့် အသံထွက်များကို အမှန်ကန်ဆုံး ဖတ်ကြားပေးနိုင်ရန် ခေတ်မီ Gemini Multimodal AI နည်းပညာဖြင့် ဖန်တီးထားပါသည်။'
+            : 'Burmese is a rich, tonal language with distinct phonology, complex diacritics, and nuanced syllable boundaries. BurmeseATAN bridges state-of-the-art multimodal AI voice models with precise Myanmar Unicode processing so creators and developers can produce authentic speech effortlessly.'}
         </p>
       </div>
 

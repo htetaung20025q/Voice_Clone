@@ -24,7 +24,6 @@ export const Navbar: React.FC<NavbarProps> = ({
     { id: 'studio', label: t.studio },
     { id: 'voices', label: t.voices },
     { id: 'about', label: t.about },
-    { id: 'docs', label: t.docs },
   ];
 
   const handleNav = (id: string) => {
@@ -47,7 +46,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <div className="flex flex-col text-left leading-tight">
             <div className="flex items-baseline gap-1.5">
               <span className="text-base font-extrabold text-zinc-900 tracking-tight">
-                BurmaVoice
+                BurmeseATAN
               </span>
               <span className="text-[11px] font-bold text-amber-600 font-burmese tracking-wide">
                 မြန်မာအသံ

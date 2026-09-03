@@ -17,7 +17,7 @@ class TTSRequest(BaseModel):
         min_length=1,
         max_length=5000,
         description="The text content (Myanmar Unicode / English) to convert to speech.",
-        examples=["မင်္ဂလာပါ ခင်ဗျာ။ BurmaVoice မှ ကြိုဆိုပါတယ်။"]
+        examples=["မင်္ဂလာပါ ခင်ဗျာ။ BurmeseATAN မှ ကြိုဆိုပါတယ်။"]
     )
     voice: str = Field(
         default="thiri",

@@ -12,14 +12,14 @@ interface TextEditorProps {
 }
 
 const SAMPLE_PRESETS_MY = [
-  { label: '✨ နှုတ်ခွန်းဆက်', text: 'မင်္ဂလာပါရှင်။ BurmaVoice မြန်မာ AI အသံဖန်တီးမှု စတူဒီယိုမှ နွေးထွေးစွာ ကြိုဆိုပါတယ်။' },
+  { label: '✨ နှုတ်ခွန်းဆက်', text: 'မင်္ဂလာပါရှင်။ BurmeseATAN မြန်မာ AI အသံဖန်တီးမှု စတူဒီယိုမှ နွေးထွေးစွာ ကြိုဆိုပါတယ်။' },
   { label: '📰 သတင်းတို', text: 'ဒီကနေ့ နံနက်ပိုင်း သတင်းများအရ နည်းပညာကဏ္ဍတွင် ဉာဏ်ရည်တု အသံစနစ်များ ပိုမိုဖွံ့ဖြိုးတိုးတက်လာကြောင်း သိရှိရပါသည်။' },
   { label: '📖 ဇာတ်လမ်း', text: 'ရှေးရှေးတုန်းက သာယာလှပတဲ့ မြို့ကလေးတစ်မြို့မှာ အလွန်ကြင်နာတတ်တဲ့ ပညာရှိတစ်ဦး နေထိုင်ခဲ့ပါတယ်။' },
   { label: '🎙️ ပေါ့ဒ်ကတ်စ်', text: 'အားလုံးပဲ မင်္ဂလာပါ ခင်ဗျာ။ ဒီနေ့ အစီအစဉ်မှာတော့ AI ခေတ်သစ်ရဲ့ အသံနည်းပညာအကြောင်း ဆွေးနွေးသွားပါမယ်။' },
 ];
 
 const SAMPLE_PRESETS_EN = [
-  { label: '✨ Greeting', text: 'Hello and welcome to BurmaVoice. Transform your text into natural-sounding speech in seconds.' },
+  { label: '✨ Greeting', text: 'Hello and welcome to BurmeseATAN. Transform your text into natural-sounding speech in seconds.' },
   { label: '📰 News Update', text: 'Good morning. Here is your daily update on technology breakthroughs and AI voice synthesis innovations.' },
   { label: '📖 Storytelling', text: 'Once upon a time in a tranquil ancient town, the morning mist gently lifted over the golden pagodas.' },
   { label: '🎙️ Podcast Intro', text: 'Welcome back to the podcast. Today we are diving into the creative potential of multimodal AI speech.' },

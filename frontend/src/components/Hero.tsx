@@ -24,7 +24,7 @@ export const Hero: React.FC<HeroProps> = ({ onStartCreating, onExploreVoices, la
     }
     return [
       'Turn Your Text Into a',
-      'Natural Myanmar Voice',
+      'Natural Myanmar Voice...',
     ];
   }, [language]);
 

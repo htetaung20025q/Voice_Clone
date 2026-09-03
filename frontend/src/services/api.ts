@@ -1,5 +1,5 @@
 /**
- * API Service for communicating with BurmaVoice FastAPI backend.
+ * API Service for communicating with BurmeseATAN FastAPI backend.
  */
 
 export interface VoiceInfo {
@@ -224,7 +224,7 @@ export class VoiceStudioAPI {
   }
 
   /**
-   * Synthesize speech using BurmaVoice API.
+   * Synthesize speech using BurmeseATAN API.
    */
   static async synthesize(req: TTSRequest): Promise<TTSResult> {
     const trimmed = req.text.trim();

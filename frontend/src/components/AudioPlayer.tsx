@@ -112,7 +112,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
     if (!audioUrl) return;
     const a = document.createElement('a');
     a.href = audioUrl;
-    const voiceTag = metadata?.voice?.toLowerCase() || 'burmavoice';
+    const voiceTag = metadata?.voice?.toLowerCase() || 'burmeseatan';
     a.download = `myanmar-ai-voice-${voiceTag}.wav`;
     document.body.appendChild(a);
     a.click();

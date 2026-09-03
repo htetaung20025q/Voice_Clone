@@ -125,7 +125,7 @@ export const translations: Record<Language, TranslationDictionary> = {
     },
     hero: {
       badge: 'မြန်မာ AI အသံ စတူဒီယို',
-      headline: 'စာသားများကို သဘာဝကျသော မြန်မာအသံအဖြစ်သို့ ပြောင်းလဲပါ',
+      headline: 'စာသားများကို သဘာဝကျသော မြန်မာအသံအဖြစ်သို့ ပြောင်းလဲပါ...',
       subtitle: 'မြန်မာဘာသာစကားနှင့် အကြောင်းအရာဖန်တီးသူများအတွက် အထူးပြုလုပ်ထားသော ခေတ်မီ AI အသံထွက် နည်းပညာ။',
       startCreating: 'စတင်ဖန်တီးရန်',
       exploreVoices: 'အသံများလေ့လာရန်',
@@ -217,7 +217,7 @@ export const translations: Record<Language, TranslationDictionary> = {
     },
     docsPage: {
       badge: 'ဆော့ဖ်ဝဲလ်ချိတ်ဆက်ရန်',
-      title: 'BurmaVoice API စာရွက်စာတမ်း',
+      title: 'BurmeseATAN API စာရွက်စာတမ်း',
       subtitle: 'REST API ဖြင့် သင်၏ Application များအတွင်း အသံထွက်စနစ် ချိတ်ဆက်နိုင်ပါသည်။',
     }
   },
@@ -232,7 +232,7 @@ export const translations: Record<Language, TranslationDictionary> = {
     },
     hero: {
       badge: 'Myanmar AI Voice Studio',
-      headline: 'Turn Your Text Into a Natural Myanmar Voice',
+      headline: 'Turn Your Text Into a Natural Myanmar Voice...',
       subtitle: 'Create natural-sounding speech using AI, designed for Myanmar language and creators.',
       startCreating: 'Start Creating',
       exploreVoices: 'Explore Voices',
@@ -324,7 +324,7 @@ export const translations: Record<Language, TranslationDictionary> = {
     },
     docsPage: {
       badge: 'Developer API',
-      title: 'BurmaVoice API Documentation',
+      title: 'BurmeseATAN API Documentation',
       subtitle: 'Integrate high-fidelity Myanmar TTS synthesis into your software with simple REST endpoints.',
     }
   }

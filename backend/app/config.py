@@ -13,7 +13,7 @@ _BACKEND_DIR = Path(__file__).resolve().parent.parent
 class Settings(BaseSettings):
     """Application settings with environment variable resolution."""
     
-    APP_NAME: str = "BurmaVoice API"
+    APP_NAME: str = "BurmeseATAN API"
     APP_VERSION: str = "1.0.0"
     ENVIRONMENT: str = "development"
     DEBUG: bool = False

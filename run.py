@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-BurmaVoice Full-Stack Launcher
+BurmeseATAN Full-Stack Launcher
 Forwards to start.py to launch both FastAPI backend and Vite frontend.
 """
 

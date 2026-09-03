@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>BurmaVoice Studio - Myanmar AI Text-to-Speech</title>
+  <title>BurmeseATAN Studio - Myanmar AI Text-to-Speech</title>
   
   <!-- Tailwind CSS via CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -131,7 +131,7 @@
         </div>
         <div>
           <div class="flex items-center space-x-2">
-            <span class="font-bold text-lg sm:text-xl tracking-tight bg-gradient-to-r from-white via-slate-200 to-indigo-300 bg-clip-text text-transparent">BurmaVoice Studio</span>
+            <span class="font-bold text-lg sm:text-xl tracking-tight bg-gradient-to-r from-white via-slate-200 to-indigo-300 bg-clip-text text-transparent">BurmeseATAN Studio</span>
             <span class="text-[11px] px-2 py-0.5 rounded-full bg-brand-500/15 text-brand-400 border border-brand-500/30 font-medium">Local Engine</span>
           </div>
           <p class="text-xs text-slate-400 font-burmese">မြန်မာ AI စာသားမှ အသံဖန်တီးစနစ်</p>
@@ -301,7 +301,7 @@
             <!-- Quick preset sample buttons -->
             <div class="flex items-center space-x-1.5 text-xs">
               <span class="text-slate-500 text-[11px] hidden sm:inline">နမူနာ:</span>
-              <button class="sample-prompt-btn px-2.5 py-1 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition font-burmese text-xs border border-slate-700/50" data-sample="မင်္ဂလာပါရှင်။ BurmaVoice မြန်မာ AI အသံဖန်တီးမှုမှ ကြိုဆိုပါတယ်။">
+              <button class="sample-prompt-btn px-2.5 py-1 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition font-burmese text-xs border border-slate-700/50" data-sample="မင်္ဂလာပါရှင်။ BurmeseATAN မြန်မာ AI အသံဖန်တီးမှုမှ ကြိုဆိုပါတယ်။">
                 နှုတ်ခွန်းဆက်
               </button>
               <button class="sample-prompt-btn px-2.5 py-1 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition font-burmese text-xs border border-slate-700/50" data-sample="ယနေ့အတွက် အဓိက သတင်းများ။ မြန်မာနိုင်ငံတွင် ဉာဏ်ရည်တု AI နည်းပညာများ ကျယ်ပြန့်စွာ အသုံးပြုလာပြီ ဖြစ်ပါသည်။">
@@ -321,7 +321,7 @@
               maxlength="500"
               placeholder="ဤနေရာတွင် မြန်မာစာသား (Myanmar Unicode) ကို ရိုက်ထည့်ပါ..."
               class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl p-4 text-base text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition font-burmese resize-y shadow-inner"
-            >မင်္ဂလာပါရှင်။ BurmaVoice မြန်မာ AI အသံဖန်တီးမှုမှ ကြိုဆိုပါတယ်။ လူကြီးမင်းတို့ လိုအပ်သော စာသားများကို သဘာဝကျသော အသံများအဖြစ် ပြောင်းလဲပေးနိုင်ပါသည်။</textarea>
+            >မင်္ဂလာပါရှင်။ BurmeseATAN မြန်မာ AI အသံဖန်တီးမှုမှ ကြိုဆိုပါတယ်။ လူကြီးမင်းတို့ လိုအပ်သော စာသားများကို သဘာဝကျသော အသံများအဖြစ် ပြောင်းလဲပေးနိုင်ပါသည်။</textarea>
             
             <!-- Controls bar below textarea -->
             <div class="mt-2.5 flex items-center justify-between text-xs text-slate-400 px-1">
@@ -460,7 +460,7 @@
   <footer class="border-t border-slate-900 bg-slate-950/80 py-6 mt-12 text-center text-xs text-slate-500">
     <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
       <div class="flex items-center space-x-2">
-        <span>BurmaVoice Studio</span>
+        <span>BurmeseATAN Studio</span>
         <span>•</span>
         <span>Hugging Face MMS VITS Neural TTS Engine</span>
       </div>
@@ -822,7 +822,7 @@
         if (!state.audioBlobUrl) return;
         const a = document.createElement('a');
         a.href = state.audioBlobUrl;
-        a.download = `burmavoice_${state.selectedSpeakerId}_${Date.now()}.wav`;
+        a.download = `burmeseatan_${state.selectedSpeakerId}_${Date.now()}.wav`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);

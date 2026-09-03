@@ -2,7 +2,7 @@ import os
 from typing import Dict, Any
 
 # Application Settings
-APP_TITLE = "BurmaVoice - Myanmar AI Text-to-Speech"
+APP_TITLE = "BurmeseATAN - Myanmar AI Text-to-Speech"
 APP_VERSION = "1.0.0"
 HOST = os.getenv("HOST", "0.0.0.0")
 PORT = int(os.getenv("PORT", 8000))
@@ -73,7 +73,7 @@ VOICE_PROFILES: Dict[str, Dict[str, Any]] = {
 SAMPLE_PROMPTS = [
     {
         "title": "နှုတ်ခွန်းဆက် (Greeting)",
-        "text": "မင်္ဂလာပါရှင်။ BurmaVoice မြန်မာ AI အသံဖန်တီးမှုမှ ကြိုဆိုပါတယ်။ လူကြီးမင်းတို့ လိုအပ်သော စာသားများကို သဘာဝကျသော အသံများအဖြစ် ပြောင်းလဲပေးနိုင်ပါသည်။"
+        "text": "မင်္ဂလာပါရှင်။ BurmeseATAN မြန်မာ AI အသံဖန်တီးမှုမှ ကြိုဆိုပါတယ်။ လူကြီးမင်းတို့ လိုအပ်သော စာသားများကို သဘာဝကျသော အသံများအဖြစ် ပြောင်းလဲပေးနိုင်ပါသည်။"
     },
     {
         "title": "သတင်းခေါင်းစဉ် (News)",

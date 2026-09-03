@@ -125,7 +125,7 @@ export const Home: React.FC<HomeProps> = ({ onOpenStudio, onExploreVoices, langu
               {language === 'my' ? 'မြန်မာ အသံထွက် စတင်ဖန်တီးရန် အဆင်သင့်ဖြစ်ပြီလား' : 'Ready to create Myanmar voiceovers?'}
             </h3>
             <p className="text-sm text-zinc-600 max-w-md mx-auto font-burmese leading-[1.8]">
-              {language === 'my' ? 'BurmaVoice စတူဒီယိုတွင် စာသားများ ရိုက်ထည့်ပြီး ချက်ချင်း အသံထွက် နားဆင်လိုက်ပါ။' : 'Experience natural Burmese voice synthesis in our dedicated studio.'}
+              {language === 'my' ? 'BurmeseATAN စတူဒီယိုတွင် စာသားများ ရိုက်ထည့်ပြီး ချက်ချင်း အသံထွက် နားဆင်လိုက်ပါ။' : 'Experience natural Burmese voice synthesis in our dedicated studio.'}
             </p>
           </div>
           <div className="relative pt-2">
@@ -145,9 +145,9 @@ export const Home: React.FC<HomeProps> = ({ onOpenStudio, onExploreVoices, langu
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
             <div className="w-5 h-5 rounded-md bg-myanmar-red flex items-center justify-center text-white text-[10px] font-bold">
-              BV
+              BA
             </div>
-            <span className="font-extrabold text-zinc-900">BurmaVoice</span>
+            <span className="font-extrabold text-zinc-900">BurmeseATAN</span>
             <span className="text-amber-600 font-burmese font-bold">မြန်မာအသံ</span>
             <span>• © {new Date().getFullYear()}</span>
           </div>

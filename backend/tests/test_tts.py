@@ -75,7 +75,7 @@ def test_get_myanmar_styles():
 
 def test_myanmar_tts_synthesis():
     payload = {
-        "text": "မင်္ဂလာပါ ခင်ဗျာ။ BurmaVoice မှ ကြိုဆိုပါတယ်။",
+        "text": "မင်္ဂလာပါ ခင်ဗျာ။ BurmeseATAN မှ ကြိုဆိုပါတယ်။",
         "voice": "thiri",
         "style": "natural",
         "language": "myanmar"
@@ -90,7 +90,7 @@ def test_myanmar_tts_synthesis():
 
 def test_tts_json_format():
     payload = {
-        "text": "BurmaVoice Myanmar AI Text-to-Speech test.",
+        "text": "BurmeseATAN Myanmar AI Text-to-Speech test.",
         "voice": "aung",
         "style": "friendly"
     }

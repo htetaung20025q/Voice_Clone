@@ -50,8 +50,8 @@ export const Studio: React.FC<StudioProps> = ({ language, initialVoiceId }) => {
   // Text state
   const [text, setText] = useState<string>(
     language === 'my'
-      ? 'မင်္ဂလာပါရှင်။ BurmaVoice မှ ကြိုဆိုပါတယ်။ သင့်ရဲ့ စာသားများကို သဘာဝကျသော မြန်မာအသံအဖြစ် ဖန်တီးပေးနိုင်ပါတယ်။'
-      : 'Welcome to BurmaVoice. Turn your text into natural-sounding Myanmar AI voice.'
+      ? 'မင်္ဂလာပါရှင်။ BurmeseATAN မှ ကြိုဆိုပါတယ်။ သင့်ရဲ့ စာသားများကို သဘာဝကျသော မြန်မာအသံအဖြစ် ဖန်တီးပေးနိုင်ပါတယ်။'
+      : 'Welcome to BurmeseATAN. Turn your text into natural-sounding Myanmar AI voice.'
   );
 
   // Standard TTS options
@@ -78,7 +78,7 @@ export const Studio: React.FC<StudioProps> = ({ language, initialVoiceId }) => {
   const [currentMetadata, setCurrentMetadata] = useState<TTSResponseMetadata | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>(() => {
     try {
-      const saved = localStorage.getItem('burmavoice_history');
+      const saved = localStorage.getItem('burmeseatan_history') || localStorage.getItem('burmavoice_history');
       return saved ? JSON.parse(saved) : [];
     } catch {
       return [];
@@ -147,6 +147,7 @@ export const Studio: React.FC<StudioProps> = ({ language, initialVoiceId }) => {
   const handleClearHistory = () => {
     setHistory([]);
     try {
+      localStorage.removeItem('burmeseatan_history');
       localStorage.removeItem('burmavoice_history');
     } catch {}
   };
@@ -207,7 +208,7 @@ export const Studio: React.FC<StudioProps> = ({ language, initialVoiceId }) => {
         setHistory((prev) => {
           const updated = [newHistoryItem, ...prev.slice(0, 9)];
           try {
-            localStorage.setItem('burmavoice_history', JSON.stringify(updated));
+            localStorage.setItem('burmeseatan_history', JSON.stringify(updated));
           } catch {}
           return updated;
         });
@@ -276,7 +277,7 @@ export const Studio: React.FC<StudioProps> = ({ language, initialVoiceId }) => {
         setHistory((prev) => {
           const updated = [newHistoryItem, ...prev.slice(0, 9)];
           try {
-            localStorage.setItem('burmavoice_history', JSON.stringify(updated));
+            localStorage.setItem('burmeseatan_history', JSON.stringify(updated));
           } catch {}
           return updated;
         });
