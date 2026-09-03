@@ -68,6 +68,10 @@ export interface TranslationDictionary {
     replicateSuccessNotice: string;
     accessRequiredTitle: string;
     accessRequiredNotice: string;
+    comingSoonBadge: string;
+    replicationComingSoonTitle: string;
+    replicationComingSoonDesc: string;
+    closeSectionBtn: string;
   };
   features: {
     title: string;
@@ -110,6 +114,60 @@ export interface TranslationDictionary {
     badge: string;
     title: string;
     subtitle: string;
+  };
+  credits: {
+    badge: string;
+    buyCredits: string;
+    freeCreditsTag: string;
+    insufficientTitle: string;
+    insufficientDesc: string;
+    requiredNotice: string;
+    premiumLockedBadge: string;
+    premiumVoiceTitle: string;
+    premiumVoiceDesc: string;
+    viewPackages: string;
+    packagesModalTitle: string;
+    packagesModalSubtitle: string;
+    loginToBuy: string;
+    purchaseSuccess: string;
+    paySimulateBtn: string;
+    categoryStandard: string;
+    categoryFootball: string;
+    categoryEducation: string;
+    categoryEntertainment: string;
+    categoryBusiness: string;
+  };
+  auth: {
+    loginBtn: string;
+    registerBtn: string;
+    logoutBtn: string;
+    welcomeBack: string;
+    createAccount: string;
+    registerGift: string;
+    emailLabel: string;
+    passwordLabel: string;
+    usernameLabel: string;
+    haveAccount: string;
+    needAccount: string;
+  };
+  admin: {
+    dashboardTitle: string;
+    dashboardSubtitle: string;
+    adminBadge: string;
+    adminModeNotice: string;
+    statsUsers: string;
+    statsGenerations: string;
+    statsCredits: string;
+    statsRevenue: string;
+    tabUsers: string;
+    tabGenerations: string;
+    searchPlaceholder: string;
+    adjustCreditsBtn: string;
+    adjustCreditsTitle: string;
+    adjustAmountLabel: string;
+    adjustReasonLabel: string;
+    confirmAdjust: string;
+    togglePremium: string;
   };
 }
 
@@ -177,6 +235,10 @@ export const translations: Record<Language, TranslationDictionary> = {
       replicateSuccessNotice: 'အသံပုံတူ key ကို အောင်မြင်စွာ ဖန်တီးပြီးပါပြီ။ ၇ ရက်အတွင်း ဆက်လက်အသုံးပြုနိုင်ပါသည်။',
       accessRequiredTitle: 'Google Cloud Voice Replication ခွင့်ပြုချက် လိုအပ်ချက်',
       accessRequiredNotice: 'ကုဒ်ပိုင်းဆိုင်ရာ အားလုံး အဆင်သင့်ဖြစ်ပြီဖြစ်သော်လည်း Voice Replication ကို အသုံးပြုရန် Google Cloud Project Allowlist ခွင့်ပြုချက် လိုအပ်ပါသည်။',
+      comingSoonBadge: 'မကြာမီလာမည်',
+      replicationComingSoonTitle: 'အသံပုံတူ ဖန်တီးမှု (Voice Replication) စနစ် မကြာမီလာမည်',
+      replicationComingSoonDesc: 'Google Cloud Voice Replication နည်းပညာဖြင့် မိမိ၏အသံနမူနာမှတစ်ဆင့် ကိုယ်ပိုင် အသံပုံတူဖန်တီးနိုင်မည့် ဝန်ဆောင်မှုကို မကြာမီ ဖွင့်လှစ်ပေးသွားပါမည်။ လတ်တလောတွင် စံပြု Gemini အသံများကို အသုံးပြုနိုင်ပါသည်။',
+      closeSectionBtn: 'စံပြု အသံဖန်တီးမှုသို့ ပြန်သွားရန်',
     },
     features: {
       title: 'အဓိက အင်္ဂါရပ်များ',
@@ -216,10 +278,64 @@ export const translations: Record<Language, TranslationDictionary> = {
       archDesc: 'FastAPI Backend နှင့် Gemini Multimodal TTS API ကို အသုံးပြုထားပြီး မြန်ဆန်ထိရောက်မှုရှိသည်။',
     },
     docsPage: {
-      badge: 'ဆော့ဖ်ဝဲလ်ချိတ်ဆက်ရန်',
-      title: 'BurmeseATAN API စာရွက်စာတမ်း',
-      subtitle: 'REST API ဖြင့် သင်၏ Application များအတွင်း အသံထွက်စနစ် ချိတ်ဆက်နိုင်ပါသည်။',
-    }
+      badge: 'အသုံးပြုသူလမ်းညွှန်',
+      title: 'BurmeseATAN API စာရွက်စာတမ်းများ',
+      subtitle: 'ခေတ်မီဆန်းသစ်သော မြန်မာ AI အသံဖန်တီးမှုကို မိမိ၏ Application များအတွင်း REST API ဖြင့် အလွယ်တကူ ချိတ်ဆက်ပါ။',
+    },
+    credits: {
+      badge: 'ခရက်ဒစ်',
+      buyCredits: 'ခရက်ဒစ် ဝယ်ယူရန်',
+      freeCreditsTag: 'အခမဲ့ ၅ ခရက်ဒစ် လက်ဆောင်',
+      insufficientTitle: 'ခရက်ဒစ် မလုံလောက်ပါ',
+      insufficientDesc: 'ဤအသံကို ဖန်တီးရန် ခရက်ဒစ် လိုအပ်ပါသည်။ ဆက်လက်အသုံးပြုရန် ခရက်ဒစ် ဖြည့်သွင်းပါ။',
+      requiredNotice: 'အက္ခရာ ၁,၀၀၀ လျှင် ၁ ခရက်ဒစ် အသုံးပြုမည်',
+      premiumLockedBadge: 'ပရီမီယမ်',
+      premiumVoiceTitle: 'ပရီမီယမ် အသံပုံစံ ဖြစ်ပါသည်',
+      premiumVoiceDesc: 'ဤအသံသည် ခရက်ဒစ် ပက်ကေ့ချ် ဝယ်ယူထားသူများအတွက် အထူးသီးသန့် အသံဖြစ်ပါသည်။',
+      viewPackages: 'ပက်ကေ့ချ်များ ကြည့်ရန်',
+      packagesModalTitle: 'ခရက်ဒစ် ပက်ကေ့ချ်များ ရွေးချယ်ရန်',
+      packagesModalSubtitle: 'မိမိလုပ်ငန်းနှင့် သင့်လျော်သော အစီအစဉ်ကို ရွေးချယ်ပြီး ပရီမီယမ်အသံအားလုံးကို ရယူလိုက်ပါ။',
+      loginToBuy: 'ခရက်ဒစ် ဝယ်ယူရန် အရင်ဆုံး အကောင့်ဝင်ပါ',
+      purchaseSuccess: 'ခရက်ဒစ် ဝယ်ယူမှု အောင်မြင်ပါသည်!',
+      paySimulateBtn: 'ဝယ်ယူမှု အတည်ပြုရန်',
+      categoryStandard: 'စံပြုအသံများ (အခမဲ့)',
+      categoryFootball: '⚽ ဘောလုံးပွဲ အသံများ',
+      categoryEducation: '🎓 ပညာရေးနှင့် သင်ကြားရေး',
+      categoryEntertainment: '🎬 ဖျော်ဖြေရေးနှင့် ဇာတ်လမ်း',
+      categoryBusiness: '💼 စီးပွားရေးနှင့် ကြော်ငြာ',
+    },
+    auth: {
+      loginBtn: 'အကောင့်ဝင်ရန်',
+      registerBtn: 'အကောင့်သစ်ဖွင့်ရန်',
+      logoutBtn: 'ထွက်ရန်',
+      welcomeBack: 'ပြန်လည်ကြိုဆိုပါသည်',
+      createAccount: 'အကောင့်သစ် ဖွင့်ပါ',
+      registerGift: 'အကောင့်သစ်ဖွင့်ပြီး ၅ ခရက်ဒစ် အခမဲ့ရယူပါ!',
+      emailLabel: 'အီးမေးလ်',
+      passwordLabel: 'စကားဝှက်',
+      usernameLabel: 'အသုံးပြုသူအမည်',
+      haveAccount: 'အကောင့်ရှိပြီးသားလား? ဝင်ရောက်ပါ',
+      needAccount: 'အကောင့်မရှိသေးဘူးလား? အကောင့်ဖွင့်ပါ',
+    },
+    admin: {
+      dashboardTitle: 'အက်ဒမင် ထိန်းချုပ်ခန်း',
+      dashboardSubtitle: 'BurmeseATAN ပလက်ဖောင်း အခြေအနေ၊ အသုံးပြုသူများနှင့် စနစ်လုပ်ဆောင်ချက်များ စီမံခန့်ခွဲခြင်း',
+      adminBadge: 'အက်ဒမင်',
+      adminModeNotice: 'အက်ဒမင် အကောင့်ဖြင့် အသံအားလုံးကို ကန့်သတ်ချက်မရှိ စမ်းသပ်အသုံးပြုနိုင်ပါသည်',
+      statsUsers: 'အသုံးပြုသူ စုစုပေါင်း',
+      statsGenerations: 'ဖန်တီးမှု စုစုပေါင်း',
+      statsCredits: 'လည်ပတ်နေသော ခရက်ဒစ်',
+      statsRevenue: 'ဝင်ငွေ စုစုပေါင်း (MMK)',
+      tabUsers: 'အသုံးပြုသူများ စီမံခြင်း',
+      tabGenerations: 'စနစ် ဖန်တီးမှု မှတ်တမ်း',
+      searchPlaceholder: 'အသုံးပြုသူ အမည် သို့မဟုတ် အီးမေးလ်ဖြင့် ရှာရန်...',
+      adjustCreditsBtn: 'ခရက်ဒစ် ပြင်ဆင်ရန်',
+      adjustCreditsTitle: 'အသုံးပြုသူ ခရက်ဒစ် ပြင်ဆင်ခြင်း',
+      adjustAmountLabel: 'ခရက်ဒစ် အရေအတွက် (+ ထည့်ရန် သို့မဟုတ် - နုတ်ရန်)',
+      adjustReasonLabel: 'အကြောင်းပြချက်',
+      confirmAdjust: 'အတည်ပြုမည်',
+      togglePremium: 'ပရီမီယမ် အဆင့် သတ်မှတ်ချက် ပြောင်းရန်',
+    },
   },
   en: {
     nav: {
@@ -284,6 +400,10 @@ export const translations: Record<Language, TranslationDictionary> = {
       replicateSuccessNotice: 'Voice replication session active (valid for 7 days).',
       accessRequiredTitle: 'Google Cloud Voice Replication Access Requirement',
       accessRequiredNotice: 'Implementation is ready and verified. However, live Google Cloud Voice Replication requires project allowlisting from Google Cloud.',
+      comingSoonBadge: 'Coming Soon',
+      replicationComingSoonTitle: 'Voice Replication — Coming Soon',
+      replicationComingSoonDesc: 'Custom AI Voice Replication and voice cloning powered by Google Cloud is currently in preparation and will be released in an upcoming update. Please use our high-fidelity Standard Gemini voices in the meantime.',
+      closeSectionBtn: 'Go back to Standard',
     },
     features: {
       title: 'Core Capabilities',
@@ -326,6 +446,60 @@ export const translations: Record<Language, TranslationDictionary> = {
       badge: 'Developer API',
       title: 'BurmeseATAN API Documentation',
       subtitle: 'Integrate high-fidelity Myanmar TTS synthesis into your software with simple REST endpoints.',
-    }
+    },
+    credits: {
+      badge: 'Credits',
+      buyCredits: 'Buy Credits',
+      freeCreditsTag: '5 Free Welcome Credits',
+      insufficientTitle: 'Not Enough Credits',
+      insufficientDesc: 'You do not have enough credits to generate this audio. Please top up to continue.',
+      requiredNotice: '1 Credit per up to 1,000 Myanmar characters',
+      premiumLockedBadge: 'Premium',
+      premiumVoiceTitle: 'Premium Voice Persona',
+      premiumVoiceDesc: 'This high-fidelity persona is unlocked with any credit package purchase.',
+      viewPackages: 'View Credit Packages',
+      packagesModalTitle: 'Choose a Credit Package',
+      packagesModalSubtitle: 'Select a plan that fits your production volume and unlock all 16 premium personas.',
+      loginToBuy: 'Please log in or register to buy credits',
+      purchaseSuccess: 'Credits successfully added to your account!',
+      paySimulateBtn: 'Confirm Purchase',
+      categoryStandard: 'Standard Voices (Free)',
+      categoryFootball: '⚽ Football & Sports',
+      categoryEducation: '🎓 Education & Teaching',
+      categoryEntertainment: '🎬 Entertainment & Stories',
+      categoryBusiness: '💼 Business & Marketing',
+    },
+    auth: {
+      loginBtn: 'Log In',
+      registerBtn: 'Sign Up',
+      logoutBtn: 'Log Out',
+      welcomeBack: 'Welcome Back',
+      createAccount: 'Create Your Account',
+      registerGift: 'Register now and get 5 FREE credits!',
+      emailLabel: 'Email Address',
+      passwordLabel: 'Password',
+      usernameLabel: 'Username',
+      haveAccount: 'Already have an account? Log in',
+      needAccount: "Don't have an account? Sign up",
+    },
+    admin: {
+      dashboardTitle: 'Admin Dashboard',
+      dashboardSubtitle: 'Manage BurmeseATAN platform metrics, user accounts, and system audio activities.',
+      adminBadge: 'ADMIN',
+      adminModeNotice: 'Admin Mode: All standard and premium voices are unlocked with unlimited generation.',
+      statsUsers: 'Total Users',
+      statsGenerations: 'Total Generations',
+      statsCredits: 'Credits in Circulation',
+      statsRevenue: 'Total Revenue (MMK)',
+      tabUsers: 'User Management',
+      tabGenerations: 'System Generations',
+      searchPlaceholder: 'Search by username or email...',
+      adjustCreditsBtn: 'Adjust Credits',
+      adjustCreditsTitle: 'Adjust User Credits',
+      adjustAmountLabel: 'Credit Amount (+ to grant, - to deduct)',
+      adjustReasonLabel: 'Adjustment Reason',
+      confirmAdjust: 'Apply Adjustment',
+      togglePremium: 'Toggle Premium Access',
+    },
   }
 };

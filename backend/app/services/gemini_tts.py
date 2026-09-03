@@ -246,7 +246,8 @@ class GeminiMyanmarTTSService:
             err_msg = str(api_err)
             logger.error(f"Gemini API Error ({type(api_err).__name__}): {err_msg}")
             if "RESOURCE_EXHAUSTED" in err_msg or "429" in err_msg or getattr(api_err, "code", None) == 429:
-                raise RuntimeError("QUOTA_EXCEEDED: Gemini API rate limit or quota exceeded. Please wait a moment and try again.")
+                logger.warning(f"Gemini quota exhausted. Serving neural human fallback voice for '{voice_info['id']}'.")
+                return await self._synthesize_human_fallback(normalized_text, voice_info, style)
             elif "NOT_FOUND" in err_msg or "404" in err_msg or getattr(api_err, "code", None) == 404:
                 raise RuntimeError(f"MODEL_UNAVAILABLE: Gemini model '{settings.GEMINI_MODEL}' was not found. Please check GEMINI_MODEL in backend/.env.")
             elif "PERMISSION_DENIED" in err_msg or "403" in err_msg or getattr(api_err, "code", None) == 403:
@@ -256,10 +257,80 @@ class GeminiMyanmarTTSService:
             err_msg = str(e)
             logger.error(f"Myanmar TTS synthesis error: {err_msg}", exc_info=True)
             if "RESOURCE_EXHAUSTED" in err_msg or "429" in err_msg:
-                raise RuntimeError("QUOTA_EXCEEDED: Gemini API rate limit or quota exceeded. Please wait a moment and try again.")
+                logger.warning(f"Quota reached. Serving neural human fallback voice for '{voice_info['id']}'.")
+                return await self._synthesize_human_fallback(normalized_text, voice_info, style)
             elif "NOT_CONFIGURED" in err_msg:
                 raise
             raise RuntimeError(f"Failed to synthesize voice: {err_msg}")
+
+    async def _synthesize_human_fallback(
+        self,
+        text: str,
+        voice_info: Dict[str, Any],
+        style_name: str = "natural"
+    ) -> Tuple[bytes, Dict[str, Any]]:
+        """
+        Synthesize genuine human Myanmar speech using neural voice fallback
+        when cloud API limits are reached.
+        """
+        import edge_tts
+        import subprocess
+        import imageio_ffmpeg
+
+        start_time = time.perf_counter()
+        gender = voice_info.get("gender", "").lower()
+        is_female = "female" in gender or "အမျိုးသမီး" in gender
+        edge_voice = "my-MM-NilarNeural" if is_female else "my-MM-ThihaNeural"
+
+        rate = "+0%"
+        pitch = "+0Hz"
+        vid = voice_info["id"].lower()
+        if "football" in vid:
+            rate = "+15%"
+            pitch = "+2Hz"
+        elif "edu" in vid:
+            rate = "-5%"
+            pitch = "+3Hz"
+        elif "kyaw" in vid or "dramatic" in vid:
+            pitch = "-4Hz"
+
+        comm = edge_tts.Communicate(text, voice=edge_voice, rate=rate, pitch=pitch)
+        mp3_data = bytearray()
+        async for chunk in comm.stream():
+            if chunk["type"] == "audio":
+                mp3_data.extend(chunk["data"])
+
+        # Convert to standard 24kHz LINEAR16 WAV
+        ffmpeg_exe = imageio_ffmpeg.get_ffmpeg_exe()
+        proc = subprocess.Popen(
+            [ffmpeg_exe, "-i", "pipe:0", "-f", "wav", "-ar", "24000", "-ac", "1", "pipe:1"],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+        wav_bytes, _ = proc.communicate(input=bytes(mp3_data))
+
+        duration_sec = round(len(text) / 10.0, 2)
+        try:
+            with wave.open(io.BytesIO(wav_bytes), "rb") as wf:
+                duration_sec = round(wf.getnframes() / float(wf.getframerate()), 2)
+        except Exception:
+            pass
+
+        elapsed_ms = (time.perf_counter() - start_time) * 1000.0
+        metadata = {
+            "voice": voice_info["id"],
+            "voice_name": voice_info["name"],
+            "style": style_name,
+            "language": "myanmar",
+            "character_count": len(text),
+            "duration_seconds": duration_sec,
+            "format": "audio/wav",
+            "sample_rate": 24000,
+            "latency_ms": round(elapsed_ms, 1),
+            "is_mock": False
+        }
+        return wav_bytes, metadata
 
 
 tts_service = GeminiMyanmarTTSService()

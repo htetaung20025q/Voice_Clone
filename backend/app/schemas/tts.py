@@ -118,6 +118,8 @@ class VoiceInfo(BaseModel):
     tone: str
     sample_tag: str
     sample_text: str
+    category: str = "STANDARD"
+    premium: bool = False
 
 
 class StyleInfo(BaseModel):

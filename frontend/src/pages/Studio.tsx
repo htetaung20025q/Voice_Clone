@@ -5,7 +5,6 @@ import { StyleSelector } from '../components/StyleSelector';
 import { GenerateButton } from '../components/GenerateButton';
 import type { GenerationState } from '../components/GenerateButton';
 import { AudioPlayer } from '../components/AudioPlayer';
-import { VoiceReplicationPanel } from '../components/VoiceReplicationPanel';
 import { VoiceStudioAPI } from '../services/api';
 import type { 
   VoiceInfo, 
@@ -21,9 +20,17 @@ import {
   Trash2,
   ArrowUpRight,
   Sparkles,
-  Fingerprint,
-  AlertTriangle
+  AlertTriangle,
+  Lock,
+  X,
+  Zap
 } from 'lucide-react';
+import { AuthService } from '../services/auth';
+import type { UserResponse } from '../services/api';
+import { AuthModal } from '../components/AuthModal';
+import { CreditPackagesModal } from '../components/CreditPackagesModal';
+import { InsufficientCreditsModal } from '../components/InsufficientCreditsModal';
+import { PremiumVoiceModal } from '../components/PremiumVoiceModal';
 
 interface StudioProps {
   language: Language;
@@ -61,12 +68,21 @@ export const Studio: React.FC<StudioProps> = ({ language, initialVoiceId }) => {
   const [selectedStyle, setSelectedStyle] = useState<string>('natural');
   const [targetLanguage, setTargetLanguage] = useState<string>('myanmar');
 
-  // Voice Replication options
-  const [sourceFile, setSourceFile] = useState<File | null>(null);
-  const [consentFile, setConsentFile] = useState<File | null>(null);
-  const [consentConfirmed, setConsentConfirmed] = useState<boolean>(false);
-  const [replicationLanguage, setReplicationLanguage] = useState<string>('my-MM');
-  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+  // User & Modals state
+  const [user, setUser] = useState<UserResponse | null>(AuthService.getUser());
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [packagesModalOpen, setPackagesModalOpen] = useState(false);
+  const [insufficientCreditsModalOpen, setInsufficientCreditsModalOpen] = useState(false);
+  const [premiumVoiceModalOpen, setPremiumVoiceModalOpen] = useState(false);
+  const [blockedVoice, setBlockedVoice] = useState<VoiceInfo | null>(null);
+
+  useEffect(() => {
+    const unsub = AuthService.subscribe((u) => setUser(u ? { ...u } : null));
+    return unsub;
+  }, []);
+
+  // Credit calculation (1 credit per 1,000 Myanmar chars)
+  const requiredCredits = Math.max(1, Math.ceil(text.trim().length / 1000));
 
   // Generation & UI states
   const [generationState, setGenerationState] = useState<GenerationState>('idle');
@@ -87,19 +103,6 @@ export const Studio: React.FC<StudioProps> = ({ language, initialVoiceId }) => {
 
   // Audio preview helper for voice cards
   const [previewAudio, setPreviewAudio] = useState<HTMLAudioElement | null>(null);
-
-  // When source or consent files change, invalidate existing voiceSessionId
-  const handleSourceFileChange = (file: File | null) => {
-    setSourceFile(file);
-    setActiveSessionId(null);
-    if (errorMessage) setErrorMessage(null);
-  };
-
-  const handleConsentFileChange = (file: File | null) => {
-    setConsentFile(file);
-    setActiveSessionId(null);
-    if (errorMessage) setErrorMessage(null);
-  };
 
   useEffect(() => {
     async function loadConfig() {
@@ -130,15 +133,10 @@ export const Studio: React.FC<StudioProps> = ({ language, initialVoiceId }) => {
       if (previewAudio) {
         previewAudio.pause();
       }
-      const res = await VoiceStudioAPI.synthesize({
-        text: voice.sample_text,
-        voice: voice.id,
-        style: 'natural',
-        language: 'myanmar',
-      });
-      const audio = new Audio(res.audioUrl);
+      const audioUrl = await VoiceStudioAPI.getVoicePreviewAudio(voice.id);
+      const audio = new Audio(audioUrl);
       setPreviewAudio(audio);
-      audio.play();
+      await audio.play();
     } catch (e) {
       console.error('Preview error:', e);
     }
@@ -154,13 +152,11 @@ export const Studio: React.FC<StudioProps> = ({ language, initialVoiceId }) => {
 
   const handleLoadHistory = (item: HistoryItem) => {
     setText(item.text);
-    if (item.isReplicated) {
-      setActiveMode('replication');
-    } else {
-      setActiveMode('standard');
+    if (!item.isReplicated) {
       setSelectedVoice(item.voice);
       setSelectedStyle(item.style);
     }
+    setActiveMode('standard');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -173,6 +169,29 @@ export const Studio: React.FC<StudioProps> = ({ language, initialVoiceId }) => {
           ? 'ကျေးဇူးပြု၍ စာသား ရိုက်ထည့်ပေးပါ။'
           : 'Please enter text to generate voice.'
       );
+      return;
+    }
+
+    // 1. Auth check: user must be authenticated
+    const currentUser = AuthService.getUser();
+    const token = AuthService.getToken();
+    if (!currentUser || !token) {
+      setAuthModalOpen(true);
+      return;
+    }
+
+    // 2. Premium voice check (Admin bypasses premium restrictions)
+    const isAuthorized = !!currentUser.is_admin || !!currentUser.is_premium;
+    const currentVoiceInfo = voices.find((v) => v.id.toLowerCase() === selectedVoice.toLowerCase());
+    if (currentVoiceInfo?.premium && !isAuthorized) {
+      setBlockedVoice(currentVoiceInfo);
+      setPremiumVoiceModalOpen(true);
+      return;
+    }
+
+    // 3. Credit balance check (Admin bypasses credit limits)
+    if (!currentUser.is_admin && currentUser.credits_balance < requiredCredits) {
+      setInsufficientCreditsModalOpen(true);
       return;
     }
 
@@ -189,7 +208,14 @@ export const Studio: React.FC<StudioProps> = ({ language, initialVoiceId }) => {
           voice: selectedVoice,
           style: selectedStyle,
           language: targetLanguage,
-        });
+        }, token);
+
+        // Update local balance
+        if (result.metadata?.credits_remaining !== undefined) {
+          AuthService.updateCredits(result.metadata.credits_remaining);
+        } else {
+          AuthService.updateCredits(Math.max(0, currentUser.credits_balance - requiredCredits));
+        }
 
         setCurrentAudioUrl(result.audioUrl);
         setCurrentMetadata(result.metadata);
@@ -214,73 +240,12 @@ export const Studio: React.FC<StudioProps> = ({ language, initialVoiceId }) => {
         });
 
       } else {
-        // Mode 2: Custom Voice Replication (Voice Sample + Consent -> Replicated Voice)
-        if (!sourceFile) {
-          throw new Error(
-            language === 'my'
-              ? 'ကျေးဇူးပြု၍ အသံနမူနာ ဖိုင်တင်ပေးပါ။'
-              : 'Please upload a voice sample.'
-          );
-        }
-        if (!consentFile) {
-          throw new Error(
-            language === 'my'
-              ? 'ကျေးဇူးပြု၍ ခွင့်ပြုချက် အသံသွင်းဖိုင် တင်ပေးပါ။'
-              : 'Please upload the required consent recording.'
-          );
-        }
-        if (!consentConfirmed) {
-          throw new Error(
-            language === 'my'
-              ? 'ကျေးဇူးပြု၍ အသံပိုင်ဆိုင်ခွင့် သို့မဟုတ် ခွင့်ပြုချက် ရှိကြောင်း အတည်ပြုပေးပါ။'
-              : 'Please confirm that you own this voice or have permission to use it.'
-          );
-        }
-
-        let sessionId = activeSessionId;
-
-        // Step 1: Create voice replication key if not already cached
-        if (!sessionId) {
-          setLoadingLabel(t.creatingVoiceBtn);
-          const repRes = await VoiceStudioAPI.replicateVoice(
-            sourceFile,
-            consentFile,
-            consentConfirmed,
-            replicationLanguage
-          );
-          sessionId = repRes.voice_session_id;
-          setActiveSessionId(sessionId);
-        }
-
-        // Step 2: Synthesize speech in replicated voice
-        setLoadingLabel(t.generatingSpeechBtn);
-        const result: TTSResult = await VoiceStudioAPI.synthesizeReplicated({
-          voice_session_id: sessionId,
-          text: trimmed,
-          language_code: replicationLanguage,
-        });
-
-        setCurrentAudioUrl(result.audioUrl);
-        setCurrentMetadata(result.metadata);
-        setGenerationState('success');
-
-        const newHistoryItem: HistoryItem = {
-          id: `rep_${Date.now()}`,
-          text: trimmed,
-          voice: 'replicated',
-          voiceName: language === 'my' ? 'စိတ်ကြိုက် ပုံတူအသံ' : 'Replicated Voice',
-          style: 'custom',
-          durationSeconds: result.metadata?.duration_seconds || 0,
-          timestamp: Date.now(),
-          isReplicated: true,
-        };
-        setHistory((prev) => {
-          const updated = [newHistoryItem, ...prev.slice(0, 9)];
-          try {
-            localStorage.setItem('burmeseatan_history', JSON.stringify(updated));
-          } catch {}
-          return updated;
-        });
+        // Voice Replication is Coming Soon & Closed
+        throw new Error(
+          language === 'my'
+            ? 'အသံပုံတူဖန်တီးမှု စနစ် မကြာမီ လာပါမည်။ ကျေးဇူးပြု၍ စံပြု အသံများကို အသုံးပြုပေးပါ။'
+            : 'Voice Replication is coming soon. Please use our standard voices.'
+        );
       }
 
       setTimeout(() => {
@@ -290,6 +255,18 @@ export const Studio: React.FC<StudioProps> = ({ language, initialVoiceId }) => {
 
     } catch (err: any) {
       console.error('Synthesis failed:', err);
+      
+      if (err.code === 'INSUFFICIENT_CREDITS' || err.status === 402) {
+        setGenerationState('idle');
+        setInsufficientCreditsModalOpen(true);
+        return;
+      }
+
+      if (err.code === 'PREMIUM_VOICE_REQUIRED' || err.status === 403) {
+        setGenerationState('idle');
+        setPremiumVoiceModalOpen(true);
+        return;
+      }
       const rawMsg = err?.message || t.errorNotice;
       
       // Check if error is related to Google Cloud allowlist or permissions
@@ -320,10 +297,8 @@ export const Studio: React.FC<StudioProps> = ({ language, initialVoiceId }) => {
 
   // Check if generate button should be disabled
   const isGenerateDisabled = () => {
+    if (activeMode === 'replication') return true;
     if (!text.trim()) return true;
-    if (activeMode === 'replication') {
-      if (!sourceFile || !consentFile || !consentConfirmed) return true;
-    }
     return false;
   };
 
@@ -339,15 +314,28 @@ export const Studio: React.FC<StudioProps> = ({ language, initialVoiceId }) => {
           <span className="text-amber-600 font-mono font-bold">24,000 Hz LINEAR16</span>
         </div>
         <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-zinc-900 font-burmese leading-tight">
-          {activeMode === 'replication' ? t.replicationTitle : t.title}
+          {activeMode === 'replication' ? `${t.replicationTitle} (${t.comingSoonBadge})` : t.title}
         </h1>
         <p className="text-sm text-zinc-500 font-burmese leading-[1.8]">
-          {activeMode === 'replication' ? t.replicationSubtitle : t.subtitle}
+          {activeMode === 'replication' ? t.replicationComingSoonDesc : t.subtitle}
         </p>
       </div>
 
+      {/* Admin Privilege Banner */}
+      {user?.is_admin && (
+        <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-400/40 flex items-center justify-between text-xs font-burmese shadow-2xs">
+          <div className="flex items-center gap-2 text-amber-900 font-bold">
+            <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
+            <span>{translations[language].admin.adminModeNotice}</span>
+          </div>
+          <span className="px-2.5 py-1 rounded-md bg-amber-500 text-zinc-950 text-[10px] font-black uppercase tracking-wider shadow-2xs shrink-0">
+            ADMIN MODE
+          </span>
+        </div>
+      )}
+
       {/* Mode Switcher Tabs (Standard TTS vs Voice Replication) */}
-      <div className="flex items-center p-1.5 bg-zinc-100/90 rounded-2xl border border-zinc-200/90 max-w-md shadow-2xs">
+      <div className="flex items-center p-1.5 bg-zinc-100/90 rounded-2xl border border-zinc-200/90 max-w-lg shadow-2xs">
         <button
           type="button"
           onClick={() => {
@@ -370,14 +358,17 @@ export const Studio: React.FC<StudioProps> = ({ language, initialVoiceId }) => {
             setActiveMode('replication');
             if (errorMessage) setErrorMessage(null);
           }}
-          className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold font-burmese transition-all cursor-pointer ${
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs font-bold font-burmese transition-all cursor-pointer ${
             activeMode === 'replication'
-              ? 'bg-white text-myanmar-red shadow-xs border border-zinc-200/80'
+              ? 'bg-white text-zinc-900 shadow-xs border border-zinc-200/80'
               : 'text-zinc-500 hover:text-zinc-900'
           }`}
         >
-          <Fingerprint className="w-3.5 h-3.5 text-myanmar-red" />
+          <Lock className="w-3.5 h-3.5 text-amber-600" />
           <span>{t.modeReplication}</span>
+          <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-amber-100 text-amber-800 border border-amber-200/80 tracking-wide">
+            {t.comingSoonBadge}
+          </span>
         </button>
       </div>
 
@@ -386,52 +377,89 @@ export const Studio: React.FC<StudioProps> = ({ language, initialVoiceId }) => {
         <div className="h-[2.5px] w-full bg-shwe-ruby-line opacity-90" />
         <div className="p-5 sm:p-8 space-y-6">
         
-        {/* Mode A: Voice Replication Upload Section */}
+        {/* Mode A: Voice Replication Coming Soon & Closed State */}
         {activeMode === 'replication' && (
-          <div className="pb-2 border-b border-zinc-100">
-            <VoiceReplicationPanel
-              sourceFile={sourceFile}
-              onSourceFileChange={handleSourceFileChange}
-              consentFile={consentFile}
-              onConsentFileChange={handleConsentFileChange}
-              consentConfirmed={consentConfirmed}
-              onConsentConfirmedChange={setConsentConfirmed}
-              targetLanguage={replicationLanguage}
-              onTargetLanguageChange={setReplicationLanguage}
-              language={language}
-              disabled={generationState === 'loading'}
-            />
+          <div className="relative p-6 sm:p-10 rounded-2xl border-2 border-dashed border-amber-200/90 bg-gradient-to-b from-amber-50/50 via-white to-zinc-50/20 text-center space-y-5 shadow-2xs">
+            <button
+              type="button"
+              onClick={() => setActiveMode('standard')}
+              className="absolute top-3 right-3 sm:top-4 sm:right-4 p-2 rounded-xl text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition-colors cursor-pointer"
+              title={t.closeSectionBtn}
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="w-14 h-14 mx-auto rounded-2xl bg-amber-100/90 text-amber-700 flex items-center justify-center shadow-xs border border-amber-200/60">
+              <Lock className="w-7 h-7 text-amber-700" />
+            </div>
+
+            <div className="space-y-2 max-w-lg mx-auto">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100/90 border border-amber-200 text-amber-800 text-xs font-bold font-burmese">
+                <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                <span>{t.comingSoonBadge}</span>
+              </div>
+              <h3 className="text-xl sm:text-2xl font-bold text-zinc-900 font-burmese">
+                {t.replicationComingSoonTitle}
+              </h3>
+              <p className="text-xs sm:text-sm text-zinc-600 font-burmese leading-relaxed">
+                {t.replicationComingSoonDesc}
+              </p>
+            </div>
+
+            <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={() => setActiveMode('standard')}
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-xs sm:text-sm font-bold font-burmese bg-myanmar-red hover:bg-myanmar-red-hover text-white transition-all cursor-pointer shadow-md shadow-myanmar-red/20 active:scale-[0.98]"
+              >
+                <Sparkles className="w-4 h-4 text-amber-200" />
+                <span>{t.closeSectionBtn}</span>
+              </button>
+            </div>
           </div>
         )}
 
-        {/* Text Input Section */}
-        <div className="space-y-2">
-          {activeMode === 'replication' && (
-            <div className="flex items-center justify-between">
-              <label className="block text-xs font-bold uppercase tracking-wider text-zinc-700">
-                {language === 'my' ? '၃။ ဖတ်ကြားလိုသော စာသား (Text Input)' : '3. Enter Text to Synthesize'}
-              </label>
-              <span className="text-[11px] text-zinc-400 font-burmese">
-                {language === 'my' ? 'မြန်မာ ယူနီကုဒ် အထောက်အပံ့' : 'Burmese Unicode'}
-              </span>
-            </div>
-          )}
-
-          <TextEditor
-            text={text}
-            onChange={(val) => {
-              setText(val);
-              if (errorMessage) setErrorMessage(null);
-            }}
-            onGenerate={handleGenerate}
-            disabled={generationState === 'loading'}
-            language={language}
-          />
-        </div>
-
-        {/* Mode B: Standard TTS Persona & Style Controls */}
+        {/* Text Input Section & Standard TTS Controls */}
         {activeMode === 'standard' && (
           <>
+            <div className="space-y-2">
+              <TextEditor
+                text={text}
+                onChange={(val) => {
+                  setText(val);
+                  if (errorMessage) setErrorMessage(null);
+                }}
+                onGenerate={handleGenerate}
+                disabled={generationState === 'loading'}
+                language={language}
+              />
+
+              {/* Dynamic Credit Requirement Indicator */}
+              <div className="flex items-center justify-between text-xs text-zinc-500 font-burmese px-1 pt-0.5">
+                <div className="flex items-center gap-1.5 text-amber-800 bg-amber-50/80 px-2.5 py-1 rounded-lg border border-amber-200/70 shadow-2xs">
+                  <Zap className="w-3.5 h-3.5 text-amber-600 fill-amber-500" />
+                  <span className="font-bold">
+                    {language === 'my'
+                      ? `ခရက်ဒစ် ${requiredCredits} ခု လိုအပ်မည် (အက္ခရာ ၁,၀၀၀ လျှင် ၁ ခရက်ဒစ်)`
+                      : `Requires: ${requiredCredits} Credit${requiredCredits > 1 ? 's' : ''} (1 credit / 1k chars)`}
+                  </span>
+                </div>
+                {user ? (
+                  <div className="text-zinc-600 font-medium">
+                    {language === 'my' ? `လက်ကျန်: ${user.credits_balance} Credits` : `Balance: ${user.credits_balance} Credits`}
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setAuthModalOpen(true)}
+                    className="text-amber-700 hover:text-amber-900 font-bold underline cursor-pointer"
+                  >
+                    ⚡ Get 5 Free Credits
+                  </button>
+                )}
+              </div>
+            </div>
+
             {/* Step 2: Voice Persona Selection */}
             <div className="pt-2">
               <VoiceSelector
@@ -439,6 +467,10 @@ export const Studio: React.FC<StudioProps> = ({ language, initialVoiceId }) => {
                 selectedVoice={selectedVoice}
                 onSelectVoice={setSelectedVoice}
                 onPreviewVoice={handlePreview}
+                onSelectPremiumBlocked={(v) => {
+                  setBlockedVoice(v);
+                  setPremiumVoiceModalOpen(true);
+                }}
                 disabled={generationState === 'loading'}
                 language={language}
               />
@@ -488,8 +520,6 @@ export const Studio: React.FC<StudioProps> = ({ language, initialVoiceId }) => {
                 ))}
               </div>
             </div>
-          </>
-        )}
 
         {/* Error / Service Notice */}
         {errorMessage && (
@@ -521,17 +551,18 @@ export const Studio: React.FC<StudioProps> = ({ language, initialVoiceId }) => {
           </div>
         )}
 
-        {/* Primary Action Button */}
-        <div className="pt-2">
-          <GenerateButton
-            state={generationState}
-            onClick={handleGenerate}
-            disabled={isGenerateDisabled()}
-            language={language}
-            loadingLabel={loadingLabel || undefined}
-            buttonLabel={activeMode === 'replication' ? t.generateBtn : undefined}
-          />
-        </div>
+            {/* Primary Action Button */}
+            <div className="pt-2">
+              <GenerateButton
+                state={generationState}
+                onClick={handleGenerate}
+                disabled={isGenerateDisabled()}
+                language={language}
+                loadingLabel={loadingLabel || undefined}
+              />
+            </div>
+          </>
+        )}
 
         </div>
       </div>
@@ -621,6 +652,44 @@ export const Studio: React.FC<StudioProps> = ({ language, initialVoiceId }) => {
         </div>
       )}
 
+      {/* Modals for Auth, Packages, Insufficient Credits, and Premium Voices */}
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        language={language}
+        onSuccess={() => setUser(AuthService.getUser())}
+      />
+
+      <CreditPackagesModal
+        isOpen={packagesModalOpen}
+        onClose={() => setPackagesModalOpen(false)}
+        language={language}
+        onRequireAuth={() => setAuthModalOpen(true)}
+        onSuccess={() => setUser(AuthService.getUser())}
+      />
+
+      <InsufficientCreditsModal
+        isOpen={insufficientCreditsModalOpen}
+        onClose={() => setInsufficientCreditsModalOpen(false)}
+        language={language}
+        requiredCredits={requiredCredits}
+        currentBalance={user?.credits_balance || 0}
+        onBuyCredits={() => {
+          setInsufficientCreditsModalOpen(false);
+          setPackagesModalOpen(true);
+        }}
+      />
+
+      <PremiumVoiceModal
+        isOpen={premiumVoiceModalOpen}
+        onClose={() => setPremiumVoiceModalOpen(false)}
+        language={language}
+        voiceName={blockedVoice ? (language === 'my' ? blockedVoice.myanmar_name : blockedVoice.name) : 'Premium Voice'}
+        onViewPackages={() => {
+          setPremiumVoiceModalOpen(false);
+          setPackagesModalOpen(true);
+        }}
+      />
     </div>
   );
 };

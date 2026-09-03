@@ -9,7 +9,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 
+import os
 from app.config import settings
+from app.db.database import init_db
+from app.db.repository import Repository
+from app.services.auth_service import hash_password
+from app.routes.auth import router as auth_router
+from app.routes.credits import router as credits_router
+from app.routes.payments import router as payments_router
+from app.routes.admin import router as admin_router
 from app.routes.tts import router as tts_router
 from app.routes.voice import router as voice_router
 from app.services.gemini_tts import tts_service
@@ -32,6 +40,20 @@ async def lifespan(app: FastAPI):
     logger.info(f"• Gemini Model: {settings.GEMINI_MODEL}")
     logger.info(f"• Gemini Configured: {'Yes' if tts_service.is_configured() else 'No (Mock Fallback Enabled)'}")
     logger.info(f"• Allowed CORS Origins: {settings.cors_origins}")
+    
+    # Initialize SQLite database tables & schema
+    init_db()
+    logger.info("• SQLite Database: Initialized")
+
+    # Ensure default admin account exists
+    admin_email = os.environ.get("ADMIN_EMAIL", "admin@burmeseatan.com")
+    admin_password = os.environ.get("ADMIN_PASSWORD", "AdminPassword123!")
+    admin_user = Repository.seed_default_admin(
+        email=admin_email,
+        password_hash=hash_password(admin_password),
+        username="Admin"
+    )
+    logger.info(f"• Default Admin Account: Ready ({admin_email})")
     logger.info("=" * 60)
     yield
     logger.info("🛑 Shutting down Voice Studio backend...")
@@ -74,7 +96,9 @@ app.add_middleware(
         "X-Audio-Language",
         "X-Audio-Mock",
         "X-Audio-Voice-Session",
-        "X-Audio-Voice-Type"
+        "X-Audio-Voice-Type",
+        "X-Audio-Credits-Used",
+        "X-Audio-Credits-Remaining"
     ]
 )
 
@@ -98,6 +122,10 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 
 # Register routes
+app.include_router(auth_router)
+app.include_router(credits_router)
+app.include_router(payments_router)
+app.include_router(admin_router)
 app.include_router(tts_router)
 app.include_router(voice_router)
 
@@ -112,6 +140,21 @@ async def root():
         "status": "online",
         "docs": "/docs",
         "endpoints": {
+            "auth": {
+                "register": "/api/v1/auth/register",
+                "login": "/api/v1/auth/login",
+                "me": "/api/v1/auth/me"
+            },
+            "credits": {
+                "balance": "/api/v1/credits",
+                "transactions": "/api/v1/credits/transactions",
+                "packages": "/api/v1/credits/packages"
+            },
+            "payments": {
+                "checkout": "/api/v1/payments/checkout",
+                "verify": "/api/v1/payments/verify",
+                "webhook": "/api/v1/payments/webhook"
+            },
             "tts": "/api/v1/tts",
             "voice_replication": "/api/v1/voice/replicate",
             "tts_voice_replication": "/api/v1/tts/voice-replication",

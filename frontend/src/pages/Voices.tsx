@@ -43,14 +43,9 @@ export const Voices: React.FC<VoicesPageProps> = ({ onSelectVoiceForStudio, lang
 
     try {
       setPlayingVoiceId(voice.id);
-      const res = await VoiceStudioAPI.synthesize({
-        text: voice.sample_text,
-        voice: voice.id,
-        style: 'natural',
-        language: 'myanmar',
-      });
+      const audioUrl = await VoiceStudioAPI.getVoicePreviewAudio(voice.id);
 
-      const audio = new Audio(res.audioUrl);
+      const audio = new Audio(audioUrl);
       setAudioInstance(audio);
       audio.onended = () => setPlayingVoiceId(null);
       await audio.play();

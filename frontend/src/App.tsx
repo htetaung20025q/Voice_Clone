@@ -4,12 +4,13 @@ import { Home } from './pages/Home';
 import { Studio } from './pages/Studio';
 import { Voices } from './pages/Voices';
 import { About } from './pages/About';
+import { AdminDashboard } from './pages/AdminDashboard';
 import type { Language } from './services/i18n';
 
 export function App() {
   const getInitialPage = () => {
     const hash = window.location.hash.replace('#/', '').replace('#', '');
-    if (['home', 'studio', 'voices', 'about'].includes(hash)) {
+    if (['home', 'studio', 'voices', 'about', 'admin'].includes(hash)) {
       return hash;
     }
     return 'home';
@@ -26,7 +27,7 @@ export function App() {
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.replace('#/', '').replace('#', '');
-      if (['home', 'studio', 'voices', 'about'].includes(hash)) {
+      if (['home', 'studio', 'voices', 'about', 'admin'].includes(hash)) {
         setCurrentPage(hash);
       }
     };
@@ -80,6 +81,12 @@ export function App() {
           <About
             onOpenStudio={() => navigateTo('studio')}
             language={language}
+          />
+        )}
+        {currentPage === 'admin' && (
+          <AdminDashboard
+            language={language}
+            onNavigateToStudio={() => navigateTo('studio')}
           />
         )}
       </main>

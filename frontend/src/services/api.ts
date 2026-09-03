@@ -13,6 +13,102 @@ export interface VoiceInfo {
   tone: string;
   sample_tag: string;
   sample_text: string;
+  category?: string;
+  premium?: boolean;
+}
+
+export interface UserResponse {
+  id: number;
+  username: string;
+  email: string;
+  is_premium: boolean;
+  is_admin: boolean;
+  credits_balance: number;
+  created_at: string;
+}
+
+export interface AdminStatsResponse {
+  total_users: number;
+  total_generations: number;
+  total_credits_balance: number;
+  total_revenue_mmk: number;
+  total_payments_count: number;
+}
+
+export interface AdminUserItem {
+  id: number;
+  username: string;
+  email: string;
+  is_premium: boolean;
+  is_admin: boolean;
+  credits_balance: number;
+  created_at: string;
+}
+
+export interface AdminGenerationItem {
+  id: number;
+  user_id: number;
+  username?: string;
+  voice: string;
+  style: string;
+  text: string;
+  credits_used: number;
+  status: string;
+  created_at: string;
+}
+
+export interface AuthTokenResponse {
+  token: string;
+  token_type: string;
+  user: UserResponse;
+}
+
+export interface CreditBalanceResponse {
+  balance: number;
+  is_premium: boolean;
+  user_id: number;
+}
+
+export interface CreditTransactionItem {
+  id: number;
+  user_id: number;
+  amount: number;
+  type: string;
+  description: string;
+  reference_id?: string;
+  created_at: string;
+}
+
+export interface CreditPackage {
+  id: string;
+  name: string;
+  credits: number;
+  price_mmk: number;
+  price_usd: number;
+  popular?: boolean;
+  badge?: string;
+  features: string[];
+  unlocks_premium: boolean;
+}
+
+export interface CheckoutResponse {
+  payment_reference: string;
+  package_id: string;
+  package_name: string;
+  amount: number;
+  credits: number;
+  currency: string;
+  status: string;
+  checkout_url?: string;
+}
+
+export interface VerifyPaymentResponse {
+  success: boolean;
+  status: string;
+  payment_reference: string;
+  credits_added: number;
+  new_balance: number;
+  message: string;
 }
 
 export interface StyleInfo {
@@ -53,6 +149,8 @@ export interface TTSResponseMetadata {
   is_mock?: boolean;
   is_replicated?: boolean;
   voice_session_id?: string;
+  credits_used?: number;
+  credits_remaining?: number;
 }
 
 export interface TTSResult {
@@ -224,9 +322,23 @@ export class VoiceStudioAPI {
   }
 
   /**
+   * Fetch free voice preview audition audio.
+   * Public & credit-free.
+   */
+  static async getVoicePreviewAudio(voiceId: string): Promise<string> {
+    const res = await fetch(`${API_BASE}/api/v1/voices/${encodeURIComponent(voiceId)}/preview`);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err?.detail?.message || `Failed to load voice preview (${res.status})`);
+    }
+    const blob = await res.blob();
+    return URL.createObjectURL(blob);
+  }
+
+  /**
    * Synthesize speech using BurmeseATAN API.
    */
-  static async synthesize(req: TTSRequest): Promise<TTSResult> {
+  static async synthesize(req: TTSRequest, token?: string): Promise<TTSResult> {
     const trimmed = req.text.trim();
     if (!trimmed) {
       throw new Error('Text is required to generate speech.');
@@ -235,10 +347,18 @@ export class VoiceStudioAPI {
       throw new Error('Text exceeds the maximum allowed length of 5,000 characters.');
     }
 
+    const authToken = token || localStorage.getItem('burmeseatan_auth_token');
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (authToken) {
+      headers['Authorization'] = `Bearer ${authToken}`;
+    }
+
     const startTime = performance.now();
     const res = await fetch(`${API_BASE}/api/v1/tts`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({
         text: trimmed,
         voice: req.voice || 'thiri',
@@ -251,13 +371,22 @@ export class VoiceStudioAPI {
 
     if (!res.ok) {
       let errorMessage = "We couldn't generate the voice. Please try again.";
+      let errorCode = '';
       try {
         const errorData = await res.json();
-        errorMessage = errorData.detail || errorData.message || errorMessage;
+        if (errorData.detail && typeof errorData.detail === 'object') {
+          errorMessage = errorData.detail.message || JSON.stringify(errorData.detail);
+          errorCode = errorData.detail.code || '';
+        } else {
+          errorMessage = errorData.detail || errorData.message || errorMessage;
+        }
       } catch {
         errorMessage = `Synthesis failed with server status ${res.status}`;
       }
-      throw new Error(errorMessage);
+      const err = new Error(errorMessage) as Error & { code?: string; status?: number };
+      err.code = errorCode;
+      err.status = res.status;
+      throw err;
     }
 
     const durationHeader = res.headers.get('X-Audio-Duration');
@@ -267,6 +396,8 @@ export class VoiceStudioAPI {
     const styleHeader = res.headers.get('X-Audio-Style');
     const langHeader = res.headers.get('X-Audio-Language');
     const mockHeader = res.headers.get('X-Audio-Mock');
+    const creditsUsedHeader = res.headers.get('X-Audio-Credits-Used');
+    const creditsRemainingHeader = res.headers.get('X-Audio-Credits-Remaining');
 
     const audioBlob = await res.blob();
     const audioUrl = URL.createObjectURL(audioBlob);
@@ -283,6 +414,8 @@ export class VoiceStudioAPI {
       sample_rate: 24000,
       latency_ms: latencyHeader ? parseFloat(latencyHeader) : clientLatency,
       is_mock: mockHeader === 'true',
+      credits_used: creditsUsedHeader ? parseInt(creditsUsedHeader, 10) : undefined,
+      credits_remaining: creditsRemainingHeader ? parseInt(creditsRemainingHeader, 10) : undefined,
     };
 
     return { audioBlob, audioUrl, metadata };
@@ -431,6 +564,181 @@ export class VoiceStudioAPI {
   static async getSessionStatus(sessionId: string): Promise<VoiceSessionStatus> {
     const res = await fetch(`${API_BASE}/api/v1/voice/session/${encodeURIComponent(sessionId)}`);
     if (!res.ok) throw new Error('Session not found or expired');
+    return await res.json();
+  }
+
+  // ==========================================
+  // Auth API Endpoints
+  // ==========================================
+
+  static async register(username: string, email: string, password: string): Promise<AuthTokenResponse> {
+    const res = await fetch(`${API_BASE}/api/v1/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, email, password }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err?.detail?.message || err?.message || 'Registration failed');
+    }
+    return await res.json();
+  }
+
+  static async login(email: string, password: string): Promise<AuthTokenResponse> {
+    const res = await fetch(`${API_BASE}/api/v1/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err?.detail?.message || err?.message || 'Invalid email or password');
+    }
+    return await res.json();
+  }
+
+  static async getMe(token: string): Promise<UserResponse> {
+    const res = await fetch(`${API_BASE}/api/v1/auth/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) throw new Error('Session expired');
+    return await res.json();
+  }
+
+  // ==========================================
+  // Credits & Packages API Endpoints
+  // ==========================================
+
+  static async getCredits(token: string): Promise<CreditBalanceResponse> {
+    const res = await fetch(`${API_BASE}/api/v1/credits`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) throw new Error('Failed to fetch credit balance');
+    return await res.json();
+  }
+
+  static async getTransactions(token: string): Promise<CreditTransactionItem[]> {
+    const res = await fetch(`${API_BASE}/api/v1/credits/transactions`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) throw new Error('Failed to fetch transactions');
+    return await res.json();
+  }
+
+  static async getPackages(): Promise<CreditPackage[]> {
+    const res = await fetch(`${API_BASE}/api/v1/credits/packages`);
+    if (!res.ok) throw new Error('Failed to fetch credit packages');
+    return await res.json();
+  }
+
+  // ==========================================
+  // Payment Endpoints
+  // ==========================================
+
+  static async checkoutPackage(packageId: string, token: string): Promise<CheckoutResponse> {
+    const res = await fetch(`${API_BASE}/api/v1/payments/checkout`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ package_id: packageId }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err?.detail?.message || 'Checkout creation failed');
+    }
+    return await res.json();
+  }
+
+  static async verifyPayment(paymentReference: string, token: string): Promise<VerifyPaymentResponse> {
+    const res = await fetch(`${API_BASE}/api/v1/payments/verify`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ payment_reference: paymentReference }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err?.detail?.message || 'Payment verification failed');
+    }
+    return await res.json();
+  }
+
+  // ==========================================
+  // Admin Endpoints
+  // ==========================================
+
+  static async getAdminStats(token: string): Promise<AdminStatsResponse> {
+    const res = await fetch(`${API_BASE}/api/v1/admin/stats`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err?.detail?.message || 'Failed to fetch admin stats');
+    }
+    return await res.json();
+  }
+
+  static async getAdminUsers(token: string, search: string = ''): Promise<AdminUserItem[]> {
+    const url = new URL(`${API_BASE}/api/v1/admin/users`);
+    if (search.trim()) url.searchParams.set('search', search.trim());
+    const res = await fetch(url.toString(), {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err?.detail?.message || 'Failed to fetch users');
+    }
+    return await res.json();
+  }
+
+  static async adjustUserCredits(
+    userId: number,
+    amount: number,
+    reason: string,
+    token: string
+  ): Promise<{ success: boolean; new_balance: number; message: string }> {
+    const res = await fetch(`${API_BASE}/api/v1/admin/users/${userId}/credits`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ amount, reason }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err?.detail?.message || 'Failed to adjust user credits');
+    }
+    return await res.json();
+  }
+
+  static async toggleUserPremium(
+    userId: number,
+    token: string
+  ): Promise<{ success: boolean; is_premium: boolean; message: string }> {
+    const res = await fetch(`${API_BASE}/api/v1/admin/users/${userId}/toggle-premium`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err?.detail?.message || 'Failed to toggle premium status');
+    }
+    return await res.json();
+  }
+
+  static async getAdminGenerations(token: string, limit: number = 30): Promise<AdminGenerationItem[]> {
+    const res = await fetch(`${API_BASE}/api/v1/admin/generations?limit=${limit}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err?.detail?.message || 'Failed to fetch activity generations');
+    }
     return await res.json();
   }
 }
