@@ -94,3 +94,24 @@ input[type="range"]::-webkit-slider-thumb:hover {
 .focus-ring {
   @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-myanmar-red/30 focus-visible:border-myanmar-red;
 }
+
+/* Typewriter Cursor Animations */
+@keyframes cursor-blink-smooth {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+.animate-cursor-blink {
+  animation: cursor-blink-smooth 0.8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-cursor-blink {
+    animation: none;
+    opacity: 0.8;
+  }
+}
