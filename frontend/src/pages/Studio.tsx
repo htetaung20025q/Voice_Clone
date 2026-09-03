@@ -207,6 +207,7 @@ export const Studio: React.FC<StudioProps> = ({ language, initialVoiceId }) => {
           text: trimmed,
           voice: selectedVoice,
           style: selectedStyle,
+          performance_profile: selectedVoice,
           language: targetLanguage,
         }, token);
 
@@ -551,8 +552,30 @@ export const Studio: React.FC<StudioProps> = ({ language, initialVoiceId }) => {
           </div>
         )}
 
+            {/* Active Speaking Performance Profile Indicator */}
+            {(() => {
+              const currentVoiceInfo = voices.find(v => v.id.toLowerCase() === selectedVoice.toLowerCase());
+              if (!currentVoiceInfo) return null;
+              return (
+                <div className="flex items-center justify-between text-xs px-3.5 py-2 rounded-xl bg-zinc-50 border border-zinc-200/80 text-zinc-600">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 shrink-0 animate-pulse" />
+                    <span className="font-semibold text-zinc-700 font-burmese shrink-0">
+                      {language === 'my' ? 'အသံစွမ်းဆောင်ရည် ပုံစံ:' : 'Performance Profile:'}
+                    </span>
+                    <span className="font-bold text-zinc-950 font-burmese truncate">
+                      {language === 'my' ? currentVoiceInfo.persona_mm : currentVoiceInfo.persona}
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-mono font-medium text-zinc-400 uppercase hidden sm:inline shrink-0 ml-2">
+                    {currentVoiceInfo.sample_tag}
+                  </span>
+                </div>
+              );
+            })()}
+
             {/* Primary Action Button */}
-            <div className="pt-2">
+            <div className="pt-1">
               <GenerateButton
                 state={generationState}
                 onClick={handleGenerate}

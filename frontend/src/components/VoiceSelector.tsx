@@ -15,6 +15,63 @@ interface VoiceSelectorProps {
   language: Language;
 }
 
+interface PerformanceAttribute {
+  energy: string;
+  pacing: string;
+  delivery: string;
+  energyBadgeColor: string;
+}
+
+const getPerformanceAttribute = (id: string): PerformanceAttribute => {
+  const vid = id.toLowerCase();
+  if (vid === 'football_live') {
+    return { energy: '⚡ Very High', pacing: 'Fast & Dynamic', delivery: 'Live Stadium Commentary', energyBadgeColor: 'bg-amber-100 text-amber-900 border-amber-300' };
+  }
+  if (vid === 'football_highlights') {
+    return { energy: '⚡ High', pacing: 'Medium-Fast', delivery: 'Highlights Narration', energyBadgeColor: 'bg-orange-100 text-orange-900 border-orange-300' };
+  }
+  if (vid === 'football_news') {
+    return { energy: '⚡ Medium', pacing: 'Controlled', delivery: 'Sports News Presenter', energyBadgeColor: 'bg-blue-100 text-blue-900 border-blue-300' };
+  }
+  if (vid === 'edu_teacher') {
+    return { energy: '⚡ Medium', pacing: 'Slow-Medium', delivery: 'Classroom Teacher', energyBadgeColor: 'bg-emerald-100 text-emerald-900 border-emerald-300' };
+  }
+  if (vid === 'edu_lecturer') {
+    return { energy: '⚡ Medium', pacing: 'Deliberate', delivery: 'University Lecturer', energyBadgeColor: 'bg-indigo-100 text-indigo-900 border-indigo-300' };
+  }
+  if (vid === 'edu_tutorial') {
+    return { energy: '⚡ Medium', pacing: 'Step-by-Step', delivery: 'Tutorial Guide', energyBadgeColor: 'bg-teal-100 text-teal-900 border-teal-300' };
+  }
+  if (vid === 'edu_kids') {
+    return { energy: '⚡ High', pacing: 'Playful', delivery: 'Kids Learning', energyBadgeColor: 'bg-pink-100 text-pink-900 border-pink-300' };
+  }
+  if (vid === 'ent_storyteller') {
+    return { energy: '⚡ Dynamic', pacing: 'Variable', delivery: 'Storyteller Narration', energyBadgeColor: 'bg-purple-100 text-purple-900 border-purple-300' };
+  }
+  if (vid === 'ent_dramatic') {
+    return { energy: '⚡ High', pacing: 'Intense', delivery: 'Cinematic Drama', energyBadgeColor: 'bg-rose-100 text-rose-900 border-rose-300' };
+  }
+  if (vid === 'ent_podcast') {
+    return { energy: '⚡ Medium', pacing: 'Conversational', delivery: 'Podcast Conversation', energyBadgeColor: 'bg-amber-100 text-amber-900 border-amber-300' };
+  }
+  if (vid === 'ent_character') {
+    return { energy: '⚡ High', pacing: 'Agile', delivery: 'Character Acting', energyBadgeColor: 'bg-fuchsia-100 text-fuchsia-900 border-fuchsia-300' };
+  }
+  if (vid === 'biz_ad') {
+    return { energy: '⚡ High', pacing: 'Medium-Fast', delivery: 'Commercial Ad', energyBadgeColor: 'bg-red-100 text-red-900 border-red-300' };
+  }
+  if (vid === 'biz_corporate') {
+    return { energy: '⚡ Medium', pacing: 'Executive', delivery: 'Corporate Presentation', energyBadgeColor: 'bg-slate-100 text-slate-900 border-slate-300' };
+  }
+  if (vid === 'biz_product') {
+    return { energy: '⚡ Med-High', pacing: 'Modern', delivery: 'Product Showcase', energyBadgeColor: 'bg-sky-100 text-sky-900 border-sky-300' };
+  }
+  if (vid === 'biz_announcement') {
+    return { energy: '⚡ Medium', pacing: 'Dignified', delivery: 'Public Address', energyBadgeColor: 'bg-zinc-100 text-zinc-900 border-zinc-300' };
+  }
+  return { energy: '⚡ Balanced', pacing: 'Natural', delivery: 'Conversational', energyBadgeColor: 'bg-zinc-100 text-zinc-800 border-zinc-200' };
+};
+
 export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
   voices,
   selectedVoice,
@@ -25,7 +82,6 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
   language,
 }) => {
   const [activeCategory, setActiveCategory] = useState<string>('ALL');
-  const tStudio = translations[language].studio;
   const tCredits = translations[language].credits;
   const user = AuthService.getUser();
   const isAuthorized = !!user?.is_admin || !!user?.is_premium;
@@ -39,34 +95,26 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
     { id: 'BUSINESS', label: tCredits.categoryBusiness },
   ];
 
-  const filteredVoices = activeCategory === 'ALL'
-    ? voices
-    : voices.filter((v) => (v.category || 'STANDARD').toUpperCase() === activeCategory);
+  const filteredVoices = voices.filter((v) => {
+    if (activeCategory === 'ALL') return true;
+    return (v.category || 'STANDARD').toUpperCase() === activeCategory;
+  });
 
-  const handleVoiceClick = (v: VoiceInfo) => {
+  const handleVoiceClick = (voice: VoiceInfo) => {
     if (disabled) return;
-    if (v.premium && !isAuthorized) {
+    if (voice.premium && !isAuthorized) {
       if (onSelectPremiumBlocked) {
-        onSelectPremiumBlocked(v);
-        return;
+        onSelectPremiumBlocked(voice);
       }
+      return;
     }
-    onSelectVoice(v.id);
+    onSelectVoice(voice.id);
   };
 
   return (
-    <div className="w-full space-y-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <label className="block text-xs font-bold uppercase tracking-wider text-zinc-700">
-          {tStudio.voiceLabel}
-        </label>
-        <span className="text-[11px] font-medium text-zinc-400 font-burmese">
-          {filteredVoices.length} {language === 'my' ? 'ဦး ရွေးချယ်နိုင်သည်' : 'voices available'}
-        </span>
-      </div>
-
-      {/* Category Pills Filter */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+    <div className="w-full space-y-4">
+      {/* Category Filter Pills */}
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-left">
         {categories.map((cat) => {
           const isActive = activeCategory === cat.id;
           return (
@@ -74,10 +122,10 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
               key={cat.id}
               type="button"
               onClick={() => setActiveCategory(cat.id)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer font-burmese ${
+              className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer font-burmese ${
                 isActive
                   ? 'bg-zinc-900 text-white shadow-xs'
-                  : 'bg-zinc-100 text-zinc-600 hover:text-zinc-900 hover:bg-zinc-200/80'
+                  : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200/80'
               }`}
             >
               {cat.label}
@@ -86,16 +134,13 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
         })}
       </div>
 
-      {/* Voices Grid */}
-      <div 
-        role="radiogroup" 
-        aria-label={tStudio.voiceLabel}
-        className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-2.5 max-h-[380px] overflow-y-auto pr-1"
-      >
+      {/* Grid of Voices with distinct Performance Profiles */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
         {filteredVoices.map((v) => {
-          const isSelected = v.id.toLowerCase() === selectedVoice.toLowerCase();
-          const isFemale = v.gender.toLowerCase().includes('female');
-          const isLocked = !!v.premium && !isAuthorized;
+          const isSelected = selectedVoice.toLowerCase() === v.id.toLowerCase();
+          const isFemale = v.gender.toLowerCase().includes('female') || v.gender.includes('အမျိုးသမီး');
+          const isLocked = v.premium && !isAuthorized;
+          const perf = getPerformanceAttribute(v.id);
 
           return (
             <div
@@ -110,7 +155,7 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
                   handleVoiceClick(v);
                 }
               }}
-              className={`group relative p-3 rounded-2xl border text-left transition-all cursor-pointer select-none focus-ring ${
+              className={`group relative p-3.5 rounded-2xl border text-left transition-all cursor-pointer select-none focus-ring ${
                 disabled ? 'opacity-60 cursor-not-allowed' : ''
               } ${
                 isSelected
@@ -139,10 +184,24 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
                     </span>
                   </div>
 
-                  <p className="text-[10px] text-zinc-500 truncate mt-0.5" title={language === 'my' ? v.persona_mm : v.persona}>
+                  {/* Performance Description */}
+                  <p className="text-[11px] text-zinc-700 font-medium line-clamp-1 mt-0.5" title={language === 'my' ? v.persona_mm : v.persona}>
                     {language === 'my' ? v.persona_mm : v.persona}
                   </p>
                 </div>
+              </div>
+
+              {/* Performance Profile Badges */}
+              <div className="mt-2 flex items-center gap-1 flex-wrap">
+                <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold border ${perf.energyBadgeColor}`}>
+                  {perf.energy}
+                </span>
+                <span className="px-1.5 py-0.5 rounded text-[9px] font-medium bg-zinc-100 text-zinc-600 border border-zinc-200">
+                  {perf.pacing}
+                </span>
+                <span className="px-1.5 py-0.5 rounded text-[9px] font-medium bg-zinc-50 text-zinc-500 border border-zinc-200/80 truncate max-w-[110px]" title={perf.delivery}>
+                  {perf.delivery}
+                </span>
               </div>
 
               {/* Bottom tag & action */}

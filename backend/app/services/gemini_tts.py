@@ -18,6 +18,7 @@ from google.genai import types
 from google.genai.errors import APIError
 
 from app.config import settings, SUPPORTED_VOICES, SUPPORTED_STYLES
+from app.services.performance_service import performance_service
 
 logger = logging.getLogger("burmavoice.tts")
 
@@ -143,16 +144,24 @@ class GeminiMyanmarTTSService:
         style: str = "natural",
         language: str = "myanmar",
         speed: float = 1.0,
-        pitch: float = 0.0
+        pitch: float = 0.0,
+        performance_profile: Optional[str] = None
     ) -> Tuple[bytes, Dict[str, Any]]:
         """
-        Synthesize text to speech using Google Gemini TTS.
+        Synthesize text to speech using Google Gemini TTS with
+        distinct voice identity and speaking performance profile.
         """
         start_time = time.perf_counter()
         normalized_text = self._normalize_myanmar_text(text)
         voice_info = self._resolve_voice(voice)
         gemini_voice = voice_info["gemini_voice"]
-        style_instruction = self._get_style_instruction(style)
+
+        # Resolve distinct speaking performance profile
+        profile = performance_service.resolve_performance_profile(
+            voice_id=voice,
+            style_id=style,
+            profile_id=performance_profile
+        )
 
         # In TEST_MODE (for automated tests), use mock synthesis without network calls
         if settings.TEST_MODE:
@@ -166,14 +175,21 @@ class GeminiMyanmarTTSService:
             )
             elapsed_ms = (time.perf_counter() - start_time) * 1000.0
             meta["latency_ms"] = round(elapsed_ms, 1)
+            meta["performance_profile"] = profile.id
+            meta["performance_name"] = profile.name
             return wav_bytes, meta
 
         if self._client is None:
             raise RuntimeError("NOT_CONFIGURED: Gemini API key is not configured. Please set GEMINI_API_KEY in backend/.env.")
 
         try:
-            # Concise directive instructing Gemini to generate audio in the desired style
-            prompt_content = f"Read the following text in a {style_instruction}:\n\n{normalized_text}"
+            # Construct multi-dimensional performance prompt
+            prompt_content = performance_service.build_tts_instruction(
+                voice_info=voice_info,
+                performance=profile,
+                text=normalized_text,
+                language=language
+            )
 
             config = types.GenerateContentConfig(
                 response_modalities=["AUDIO"],
@@ -231,6 +247,8 @@ class GeminiMyanmarTTSService:
                 "voice": voice_info["id"],
                 "voice_name": voice_info["name"],
                 "style": style,
+                "performance_profile": profile.id,
+                "performance_name": profile.name,
                 "language": language,
                 "character_count": len(normalized_text),
                 "duration_seconds": duration,
@@ -246,8 +264,8 @@ class GeminiMyanmarTTSService:
             err_msg = str(api_err)
             logger.error(f"Gemini API Error ({type(api_err).__name__}): {err_msg}")
             if "RESOURCE_EXHAUSTED" in err_msg or "429" in err_msg or getattr(api_err, "code", None) == 429:
-                logger.warning(f"Gemini quota exhausted. Serving neural human fallback voice for '{voice_info['id']}'.")
-                return await self._synthesize_human_fallback(normalized_text, voice_info, style)
+                logger.warning(f"Gemini quota exhausted. Serving neural human fallback voice for '{voice_info['id']}' with profile '{profile.id}'.")
+                return await self._synthesize_human_fallback(normalized_text, voice_info, style, profile=profile, speed=speed)
             elif "NOT_FOUND" in err_msg or "404" in err_msg or getattr(api_err, "code", None) == 404:
                 raise RuntimeError(f"MODEL_UNAVAILABLE: Gemini model '{settings.GEMINI_MODEL}' was not found. Please check GEMINI_MODEL in backend/.env.")
             elif "PERMISSION_DENIED" in err_msg or "403" in err_msg or getattr(api_err, "code", None) == 403:
@@ -257,8 +275,8 @@ class GeminiMyanmarTTSService:
             err_msg = str(e)
             logger.error(f"Myanmar TTS synthesis error: {err_msg}", exc_info=True)
             if "RESOURCE_EXHAUSTED" in err_msg or "429" in err_msg:
-                logger.warning(f"Quota reached. Serving neural human fallback voice for '{voice_info['id']}'.")
-                return await self._synthesize_human_fallback(normalized_text, voice_info, style)
+                logger.warning(f"Quota reached. Serving neural human fallback voice for '{voice_info['id']}' with profile '{profile.id}'.")
+                return await self._synthesize_human_fallback(normalized_text, voice_info, style, profile=profile, speed=speed)
             elif "NOT_CONFIGURED" in err_msg:
                 raise
             raise RuntimeError(f"Failed to synthesize voice: {err_msg}")
@@ -267,32 +285,35 @@ class GeminiMyanmarTTSService:
         self,
         text: str,
         voice_info: Dict[str, Any],
-        style_name: str = "natural"
+        style_name: str = "natural",
+        profile: Optional[Any] = None,
+        speed: float = 1.0
     ) -> Tuple[bytes, Dict[str, Any]]:
         """
         Synthesize genuine human Myanmar speech using neural voice fallback
-        when cloud API limits are reached.
+        with distinct profile-specific pacing, pitch, and prosody.
         """
         import edge_tts
         import subprocess
         import imageio_ffmpeg
+
+        if profile is None:
+            profile = performance_service.resolve_performance_profile(
+                voice_id=voice_info["id"],
+                style_id=style_name
+            )
 
         start_time = time.perf_counter()
         gender = voice_info.get("gender", "").lower()
         is_female = "female" in gender or "အမျိုးသမီး" in gender
         edge_voice = "my-MM-NilarNeural" if is_female else "my-MM-ThihaNeural"
 
-        rate = "+0%"
-        pitch = "+0Hz"
-        vid = voice_info["id"].lower()
-        if "football" in vid:
-            rate = "+15%"
-            pitch = "+2Hz"
-        elif "edu" in vid:
-            rate = "-5%"
-            pitch = "+3Hz"
-        elif "kyaw" in vid or "dramatic" in vid:
-            pitch = "-4Hz"
+        # Apply profile-specific speed and pitch modifiers
+        base_speed = getattr(profile, "speed_modifier", 1.0)
+        effective_speed = base_speed * speed
+        rate_diff = int((effective_speed - 1.0) * 100)
+        rate = f"{'+' if rate_diff >= 0 else ''}{rate_diff}%"
+        pitch = getattr(profile, "pitch_modifier", "+0Hz")
 
         comm = edge_tts.Communicate(text, voice=edge_voice, rate=rate, pitch=pitch)
         mp3_data = bytearray()
@@ -322,6 +343,8 @@ class GeminiMyanmarTTSService:
             "voice": voice_info["id"],
             "voice_name": voice_info["name"],
             "style": style_name,
+            "performance_profile": profile.id,
+            "performance_name": profile.name,
             "language": "myanmar",
             "character_count": len(text),
             "duration_seconds": duration_sec,

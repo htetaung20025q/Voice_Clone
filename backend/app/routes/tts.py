@@ -20,10 +20,12 @@ from app.schemas.tts import (
     TTSResponseMetadata,
     VoiceInfo,
     StyleInfo,
+    PerformanceProfileInfo,
     HealthResponse
 )
 from app.schemas.voice import ReplicatedTTSRequest
 from app.services.gemini_tts import tts_service
+from app.services.performance_service import performance_service
 from app.services.voice_replication import (
     replication_service,
     VoiceSessionNotFoundError,
@@ -153,6 +155,40 @@ async def get_styles():
     return SUPPORTED_STYLES
 
 
+@router.get(
+    "/api/performance-profiles",
+    response_model=List[PerformanceProfileInfo],
+    summary="Get Available Speaking Performance Profiles"
+)
+@router.get(
+    "/api/v1/performance-profiles",
+    response_model=List[PerformanceProfileInfo],
+    summary="Get Available Speaking Performance Profiles (v1)"
+)
+async def get_performance_profiles(category: Optional[str] = Query(default=None, description="Filter by category")):
+    profiles = performance_service.list_profiles(category=category)
+    return [
+        PerformanceProfileInfo(
+            id=p.id,
+            name=p.name,
+            name_mm=p.name_mm,
+            category=p.category,
+            energy=p.energy,
+            pacing=p.pacing,
+            emotion=p.emotion,
+            emphasis=p.emphasis,
+            pauses=p.pauses,
+            pitch_variation=p.pitch_variation,
+            delivery=p.delivery,
+            speed_modifier=p.speed_modifier,
+            pitch_modifier=p.pitch_modifier,
+            instructions=p.instructions,
+            burmese_guidance=p.burmese_guidance
+        )
+        for p in profiles
+    ]
+
+
 @router.post(
     "/api/tts",
     summary="Synthesize Myanmar Speech"
@@ -213,14 +249,15 @@ async def synthesize_speech(
     )
 
     try:
-        # 5. Synthesize TTS
+        # 5. Synthesize TTS with Voice Identity + Performance Profile
         wav_bytes, metadata = await tts_service.synthesize(
             text=request.text,
             voice=request.voice,
             style=request.style or "natural",
             language=request.language or "myanmar",
             speed=request.speed or 1.0,
-            pitch=request.pitch or 0.0
+            pitch=request.pitch or 0.0,
+            performance_profile=request.performance_profile
         )
 
         # 6. On success: Atomically deduct credits and mark generation SUCCESS

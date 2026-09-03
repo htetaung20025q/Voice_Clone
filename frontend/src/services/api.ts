@@ -119,6 +119,24 @@ export interface StyleInfo {
   prompt_instruction: string;
 }
 
+export interface PerformanceProfile {
+  id: string;
+  name: string;
+  name_mm: string;
+  category: string;
+  energy: string;
+  pacing: string;
+  emotion: string;
+  emphasis: string;
+  pauses: string;
+  pitch_variation: string;
+  delivery: string;
+  speed_modifier: number;
+  pitch_modifier: string;
+  instructions: string;
+  burmese_guidance: string;
+}
+
 export interface HealthResponse {
   status: string;
   version: string;
@@ -131,6 +149,7 @@ export interface TTSRequest {
   text: string;
   voice: string;
   style: string;
+  performance_profile?: string;
   language?: string;
   speed?: number;
   pitch?: number;
@@ -140,6 +159,8 @@ export interface TTSResponseMetadata {
   voice: string;
   voice_name: string;
   style: string;
+  performance_profile?: string;
+  performance_name?: string;
   language: string;
   character_count: number;
   duration_seconds: number;
@@ -322,6 +343,22 @@ export class VoiceStudioAPI {
   }
 
   /**
+   * Fetch available speaking performance profiles.
+   */
+  static async getPerformanceProfiles(category?: string): Promise<PerformanceProfile[]> {
+    try {
+      const url = category
+        ? `${API_BASE}/api/v1/performance-profiles?category=${encodeURIComponent(category)}`
+        : `${API_BASE}/api/v1/performance-profiles`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('Failed to fetch performance profiles');
+      return await res.json();
+    } catch {
+      return [];
+    }
+  }
+
+  /**
    * Fetch free voice preview audition audio.
    * Public & credit-free.
    */
@@ -363,6 +400,7 @@ export class VoiceStudioAPI {
         text: trimmed,
         voice: req.voice || 'thiri',
         style: req.style || 'natural',
+        performance_profile: req.performance_profile,
         language: req.language || 'myanmar',
         speed: req.speed || 1.0,
         pitch: req.pitch || 0.0,

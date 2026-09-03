@@ -46,6 +46,11 @@ class TTSRequest(BaseModel):
         le=1.0,
         description="Pitch adjustment factor (-1.0 to 1.0)."
     )
+    performance_profile: Optional[str] = Field(
+        default=None,
+        description="Speaking performance profile: football_live, football_highlights, football_news, edu_teacher, edu_lecturer, edu_tutorial, ent_storyteller, ent_podcast, biz_ad, biz_corporate, biz_announcement, standard_natural, etc.",
+        examples=["football_live"]
+    )
 
     @field_validator("text")
     @classmethod
@@ -87,6 +92,8 @@ class TTSResponseMetadata(BaseModel):
     voice: str
     voice_name: str
     style: str
+    performance_profile: Optional[str] = None
+    performance_name: Optional[str] = None
     language: str
     character_count: int
     duration_seconds: float
@@ -130,6 +137,26 @@ class StyleInfo(BaseModel):
     myanmar_name: str
     description: str
     prompt_instruction: str
+
+
+class PerformanceProfileInfo(BaseModel):
+    """Information about a speaking performance profile."""
+    
+    id: str
+    name: str
+    name_mm: str
+    category: str
+    energy: str
+    pacing: str
+    emotion: str
+    emphasis: str
+    pauses: str
+    pitch_variation: str
+    delivery: str
+    speed_modifier: float = 1.0
+    pitch_modifier: str = "+0Hz"
+    instructions: str
+    burmese_guidance: str
 
 
 class HealthResponse(BaseModel):
