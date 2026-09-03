@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowRight, Sparkles, Shield, Cpu, HeartHandshake } from 'lucide-react';
+import { ArrowRight, Sparkles, Shield, HeartHandshake } from 'lucide-react';
 import type { Language } from '../services/i18n';
 import { translations } from '../services/i18n';
 
@@ -38,28 +38,6 @@ export const About: React.FC<AboutProps> = ({ onOpenStudio, language }) => {
             ? 'မြန်မာဘာသာစကား၏ အသံထွက်၊ လေယူလေသိမ်းနှင့် သဒ္ဒါစည်းမျဉ်းများသည် အခြားဘာသာစကားများနှင့် မတူဘဲ ထူးခြားဆန်းကြယ်လှပါသည်။ BurmaVoice သည် မြန်မာစာလုံးပေါင်း သတ်ပုံများနှင့် အသံထွက်များကို အမှန်ကန်ဆုံး ဖတ်ကြားပေးနိုင်ရန် ခေတ်မီ Gemini Multimodal AI နည်းပညာဖြင့် ဖန်တီးထားပါသည်။'
             : 'Burmese is a rich, tonal language with distinct phonology, complex diacritics, and nuanced syllable boundaries. BurmaVoice bridges state-of-the-art multimodal AI voice models with precise Myanmar Unicode processing so creators and developers can produce authentic speech effortlessly.'}
         </p>
-      </div>
-
-      {/* Architecture */}
-      <div className="space-y-4 border-t border-zinc-200 pt-10">
-        <div className="flex items-center gap-2">
-          <Cpu className="w-5 h-5 text-myanmar-red" />
-          <h2 className="text-lg font-bold text-zinc-900">{t.archTitle}</h2>
-        </div>
-        <p className="text-sm text-zinc-600 leading-relaxed">
-          {t.archDesc}
-        </p>
-
-        <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 font-mono text-xs text-zinc-700 overflow-x-auto leading-relaxed">
-          <pre>
-{`[ React Frontend (UI) ] ── (POST /api/v1/tts) ──> [ FastAPI Backend ]
-                                                         │
-                                                         ▼ (Server-Side GenAI)
-                                                 [ Google Gemini TTS ]
-                                                         │
-[ Audio Player + WAV ] <── (16-bit 24kHz WAV) ───────────┘`}
-          </pre>
-        </div>
       </div>
 
       {/* Key Guarantees */}
